@@ -1,1 +1,1 @@
-# LSST-Capstone-Team
+# LSST_Labeler
