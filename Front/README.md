@@ -8,6 +8,7 @@ This command will get the app running. Once the app is running any changes made 
 
 ```
 cd LSST-Labeler
+npm install
 ng serve --open
 ```
 

@@ -1,0 +1,8 @@
+Test Plan for Web App
+  - Hello world app compiles and displays
+
+Test Plan for Database
+  - Can manipulate and read data
+
+Test Plan for Processing Pipeline
+  - Can successfully display raw images
