@@ -29,31 +29,40 @@
   </div>
 </header>
 
+
 <!-- label Grid Section -->
 <section class="label" id="label">
   <div class="container">
-    <h2 class="text-center text-uppercase text-secondary mb-0">label</h2>
-    <hr class="star-dark mb-5">
+    <!-- <h2 class="text-center text-uppercase text-secondary mb-0">label</h2>
+    <hr class="star-dark mb-5"> -->
     <div class="row">
-      <div class="col-8">
-        <img src="assets/img/commet.png" >
+      <div class="col-9">
+        <img id="label_image" src="assets/img/commet.png" >
       </div>
-      <div class="col-4">
-        <div>
-          <a class="btn btn-xl btn-outline-dark" href="#">
-            <i class="fas fa-check"></i>
+      <div class="col-2">
+          <a class="btn btn-xl btn-outline-dark label_option">
+            <i class="fas fa-check" style="padding-right:5px"></i>
             Yup
           </a>
-        </div>
-          <a class="btn btn-xl btn-outline-dark" href="#">
-            <i class="fas fa-times"></i>
+          <a class="btn btn-xl btn-outline-dark label_option">
+            <i class="fas fa-times" style="padding-right:5px"></i>
             Nope
           </a>
-        <div>
-        </div>
+          <a class="btn btn-xl btn-outline-dark label_option">
+            <i class="fa fa-question" aria-hidden="true" style="padding-right:5px"></i>
+            Help
+          </a>
       </div>
 
     </div> <!--end of first row -->
+    <div id="label_info">
+      <h4 class="font-weight-light mb-0">
+        How to Classify
+      </h4>
+      <p>
+          We are looking at asteroids from all over the sky. Sometimes the patch of sky will be crowded with background stars that might make it harder to identify whether the asteroid has a coma/tail as well as make it hard to identify which source in the image is the asteroid. We want to know about that. Look at the asteroid image (large image on left with purple crosshairs). If you see more than one source in the central region bordered by the crosshairs, answer 'yes'. Compare the center region to the examples below.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -148,7 +157,7 @@
           <h2 class="text-secondary text-uppercase mb-0">Project Name</h2>
           <hr class="star-dark mb-5">
           <img class="img-fluid mb-5" src="assets/img/label/cabin.png" alt="">
-          <p class="mb-5">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Mollitia neque assumenda ipsam nihil, molestias magnam, recusandae quos quis inventore quisquam velit asperiores, vitae? Reprehenderit soluta, eos quod consequuntur itaque. Nam.</p>
+          <p class="mb-5">We are looking at asteroids from all over the sky. Sometimes the patch of sky will be crowded with background stars that might make it harder to identify whether the asteroid has a coma/tail as well as make it hard to identify which source in the image is the asteroid. We want to know about that. Look at the asteroid image (large image on left with purple crosshairs). If you see more than one source in the central region bordered by the crosshairs, answer 'yes'. Compare the center region to the examples below.</p>
           <a class="btn btn-primary btn-lg rounded-pill label-modal-dismiss" href="#">
             <i class="fa fa-close"></i>
             Close Project</a>

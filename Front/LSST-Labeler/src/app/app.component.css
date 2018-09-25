@@ -11,3 +11,16 @@ h1 {
 .pad-top {
   padding-top: 10%;
 }
+
+#label_image {
+  width: 100%;
+}
+
+.label_option {
+  width: 100%;
+  margin: 5%;
+}
+
+#label_info {
+  padding-top: 2%;
+}
