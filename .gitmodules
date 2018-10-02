@@ -1,0 +1,3 @@
+[submodule "LSST_Labeler_Angular"]
+	path = LSST_Labeler_Angular
+	url = https://github.com/mikaylawhiteaker/LSST_Labeler_Angular
