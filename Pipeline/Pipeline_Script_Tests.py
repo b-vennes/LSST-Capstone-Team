@@ -1,6 +1,7 @@
 import requests
 import script
 import os
+import pytest
 from shutil import copyfile
 
 '''
