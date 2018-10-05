@@ -1,7 +1,12 @@
 import requests
 import script
 import os
+from shutil import copyfile
 
+'''
+    Test Description:
+    Verify that script.create_image() can create an image
+'''
 def test_create_image():
     script.create_image()
     emptyFile = False
@@ -11,35 +16,21 @@ def test_create_image():
             emptyFile = True
     assert emptyFile == False and len(os.listdir('Images')) != 0
 
-def test_push_images():
-    script.push_images()
-assert False
-
 '''
     Test Description:
-    Attempt to reach the API and GET a 200 (OK) response.
-    Tests that the API can be connected to and is alive.
+    Verify that script.post_images() successfully sends an image to the API
 '''
-def test_api_get_response():
-    data = requests.get("http://localhost:7071/api/lsst-label-api")
-    assert(data.status_code == 200)
+def test_post_images():
 
-'''
-    Test Description:
-    Attempt to send nothing to the API, the API should return an error.
-'''
-def test_api_post_without_image():
-    data = requests.post("http://localhost:7071/api/lsst-label-api")
-    assert(data.status_code != 200)
+    srcFile = "spooky.jpg"
+    newFile = "toospooky.jpg"
 
-'''
-    Test Description:
-    Send an actual image and expect a 200 response.
-'''
-def test_send_image_to_api():
-    with open("spooky.jpg", "rb") as imageFile:
-        f = imageFile.read()
-        b = bytearray(f)
+    # make a copy of the source image
+    copyfile(srcFile, newFile)
 
-    data = requests.post("http://localhost:7071/api/lsst-label-api", data = b)
-    assert(data.status_code == 200)
+    # post image to API and check for success
+    postSuccess = script.post_images(newFile)
+    assert postSuccess
+
+    # check if file was deleted
+    assert (os.path.isfile(newFile) != True)
