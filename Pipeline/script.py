@@ -2,6 +2,11 @@ import os
 import requests
 
 def create_image():
+    #data from butler:
+    #   what data?
+
+    #Calibrating single frame
+    # processCcd.py DATA --rerun processCcdOutputs --id 
     return 0
 
 def post_images(image_path):
