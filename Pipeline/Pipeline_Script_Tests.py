@@ -5,7 +5,7 @@ import pytest
 from shutil import copyfile
 
 '''
-    Test Description:
+    Description:
     Verify that script.create_image() can create an image
 '''
 def test_create_image():
@@ -18,7 +18,7 @@ def test_create_image():
     assert emptyFile == False and len(os.listdir('Images')) != 0
 
 '''
-    Test Description:
+    Description:
     Verify that script.post_images() successfully sends an image to the API
 '''
 def test_post_images():
@@ -35,3 +35,11 @@ def test_post_images():
 
     # check if file was deleted
     assert (os.path.isfile(newFile) != True)
+
+'''
+    Description:
+    Verify that the image given by create_image is in a usable format
+'''
+def test_image_format():
+    # TODO
+    assert False
