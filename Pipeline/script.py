@@ -1,12 +1,16 @@
 import os
 import requests
+import subprocess
 
 def create_image():
     #data from butler:
     #   what data?
+    print("start")
+    subprocess.call("source bash_scripts/setup.bash")
+    print("end")
 
     #Calibrating single frame
-    # processCcd.py DATA --rerun processCcdOutputs --id 
+    # processCcd.py DATA --rerun processCcdOutputs --id
     return 0
 
 def post_images(image_path):
@@ -27,3 +31,5 @@ def post_images(image_path):
         return 1
     else:
         return 0
+
+create_image()
