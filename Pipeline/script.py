@@ -1,24 +1,33 @@
 import os
-import requests
+import boto3
 
 def create_image():
     return 0
 
-def post_images(image_path):
+def post_image(image_path):
+    """
+    Posts the given image to the amazon s3 lsst-images bucket
 
-    # put image file into byte array
-    with open(image_path, "rb") as imageFile:
-        f = imageFile.read()
-        b = bytearray(f)
+    returns the link to the image on s3
+    """
 
-    # make request
-    data = requests.post("http://localhost:7071/api/lsst-label-api", data = b)
+    # our bucket name
+    bucket_name = 'lsst-images'
 
-    # delete file after it has been sent
-    os.remove(image_path)
+    # get amazon storage
+    s3 = boto3.resource('s3')
 
-    # check status code
-    if (data.status_code == 200):
-        return 1
-    else:
-        return 0
+    image = open(image_path, 'rb')
+    s3.Bucket(bucket_name).put_object(Key=image_path, Body=image)
+
+    # get the zone for the bucket, to be added to the url
+    bucket_zone = boto3.client('s3').get_bucket_location(Bucket=bucket_name)
+
+    # get the link for the image, this will be sent to the database
+    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}".format(
+        bucket_zone['LocationConstraint'],
+        bucket_name,
+        image_path
+    )
+
+    return image_link

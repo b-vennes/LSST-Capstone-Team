@@ -1,7 +1,7 @@
-import requests
 import script
 import os
 import pytest
+import boto3
 from shutil import copyfile
 
 '''
@@ -19,22 +19,23 @@ def test_create_image():
 
 '''
     Description:
-    Verify that script.post_images() successfully sends an image to the API
+    Verify that script.post_images() successfully sends an image to s3 bucket
 '''
-def test_post_images():
+def test_post_image_to_bucket():
 
-    srcFile = "spooky.jpg"
-    newFile = "toospooky.jpg"
+    image = "comet.jpg"
 
-    # make a copy of the source image
-    copyfile(srcFile, newFile)
+    # post image to s3, error thrown if unsuccessful
+    link = script.post_image(image)
 
-    # post image to API and check for success
-    postSuccess = script.post_images(newFile)
-    assert postSuccess
+    # check that link has been formatted correctly
+    assert(link == "https://s3-us-west-2.amazonaws.com/lsst-images/comet.jpg")
 
-    # check if file was deleted
-    assert (os.path.isfile(newFile) != True)
+    # delete image from s3, error will be thrown if unsuccessful
+    s3 = boto3.resource('s3')
+    s3.Object('lsst-images', image).delete()
+
+
 
 '''
     Description:
