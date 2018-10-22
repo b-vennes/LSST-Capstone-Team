@@ -2,6 +2,14 @@ import os
 import boto3
 
 def create_image():
+    #data from butler:
+    #   what data?
+    print("start")
+    subprocess.call("source bash_scripts/setup.bash")
+    print("end")
+
+    #Calibrating single frame
+    # processCcd.py DATA --rerun processCcdOutputs --id
     return 0
 
 def post_image(image_path):
