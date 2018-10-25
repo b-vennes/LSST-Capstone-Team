@@ -8,6 +8,7 @@ from shutil import copyfile
     Description:
     Verify that script.create_image() can create an image
 '''
+"""
 def test_create_image():
     script.create_image()
     emptyFile = False
@@ -16,12 +17,12 @@ def test_create_image():
         if statinfo.st_size == 0:
             emptyFile = True
     assert emptyFile == False and len(os.listdir('Images')) != 0
+"""
 
-'''
-    Description:
-    Verify that script.post_images() successfully sends an image to s3 bucket
-'''
 def test_post_image_to_bucket():
+    """
+    Verify that script.post_images() successfully sends an image to s3 bucket
+    """
 
     image = "comet.jpg"
 
@@ -35,12 +36,9 @@ def test_post_image_to_bucket():
     s3 = boto3.resource('s3')
     s3.Object('lsst-images', image).delete()
 
+def test_post_image_to_dynamo():
 
+    image_id = "comet"
 
-'''
-    Description:
-    Verify that the image given by create_image is in a usable format
-'''
-def test_image_format():
-    # TODO
-    assert False
+    # try to update database
+    script.post_database(image_id)
