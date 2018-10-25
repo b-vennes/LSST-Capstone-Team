@@ -1,15 +1,25 @@
 import os
 import boto3
+import subprocess
+import lsst.daf.persistence as dafPersist
+import lsst.afw.display as afwDisplay
 
 def create_image():
-    #data from butler:
-    #   what data?
-    print("start")
-    subprocess.call("source bash_scripts/setup.bash")
-    print("end")
+    butler = dafPersist.Butler(inputs='DATA/rerun/processCcdOutputs')
+    display = afwDisplay.getDisplay(backend='ds9')
+    for data in butler.queryMetadata('calexp', ['visit', 'ccd'], dataId={'filter': 'HSC-R'}):
+        dataId = {'filter': 'HSC-R', 'visit': data[0], 'ccd': data[1]}
+        calexp = butler.get('calexp', **dataId)
+        display.mtv(calexp)
+        #mark all sources
+        src = butler.get('src', dataId={'filter': 'HSC-R', 'visit': data[0], 'ccd': data[1]})
+        with display.Buffering():
+            for s in src:
+                display.dot("o", s.getX(), s.getY(), size=10, ctype='orange')
+        #crop each source
 
-    #Calibrating single frame
-    # processCcd.py DATA --rerun processCcdOutputs --id
+        #put each croped image in blob
+
     return 0
 
 def post_image(image_path):
@@ -39,3 +49,5 @@ def post_image(image_path):
     )
 
     return image_link
+
+post_image('comet.jpg')

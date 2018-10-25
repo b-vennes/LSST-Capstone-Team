@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ../../../lsst_stack
+cd ../../lsst_stack
 git clone https://github.com/lsst/ci_hsc
 setup -j -r ci_hsc
 echo $CI_HSC_DIR
