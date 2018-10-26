@@ -26,7 +26,7 @@ def upload_image(image_path):
     # add the unique id to the database
     post_database(unique_id)
 
-    print(new_link)
+    return new_link
 
 def post_image(image_path):
     """
@@ -80,7 +80,7 @@ def post_database(image_id):
 
     return response
 
-def get_random_image_url():
+def random_image():
     """
     Retrieves a random image url by getting a random item from the database and creating its url string.
     """
