@@ -3,7 +3,7 @@ import boto3
 import subprocess
 import random
 import uuid
-import urllib
+import urllib.request
 from boto3.dynamodb.conditions import Key, Attr
 from shutil import copyfile
 
@@ -92,13 +92,11 @@ def random_image():
 
     # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
-
     table_name = 'LSST-Images'
-
     table = dynamodb.Table(table_name)
 
+    # take arandom value from all the values currently in the table
     response = table.scan()
-
     randomIndex = random.randint(0,response['Count'] - 1)
 
     items = response['Items']
@@ -130,4 +128,4 @@ def get_image_link(image_id):
     return image_link
 
 link = upload_image("spooky.jpg")
-urllib.URLopener().retrieve(link, "extra_spooky.jpg")
+urllib.request.urlretrieve(link, "extra_spooky.jpg")
