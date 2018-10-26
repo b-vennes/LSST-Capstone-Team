@@ -85,6 +85,7 @@ def post_image(image_path):
 
     return image_link
 
+<<<<<<< Updated upstream
 def post_database(image_id):
 
     # predefined values for region and endpoint
@@ -152,3 +153,6 @@ def get_image_link(image_id):
 
 # get_random_image_url()
 create_image()
+=======
+post_image('spooky.jpg')
+>>>>>>> Stashed changes
