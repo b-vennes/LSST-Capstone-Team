@@ -3,6 +3,7 @@ import boto3
 import subprocess
 import random
 import uuid
+import urllib
 from boto3.dynamodb.conditions import Key, Attr
 from shutil import copyfile
 
@@ -128,4 +129,5 @@ def get_image_link(image_id):
 
     return image_link
 
-upload_image("spooky.jpg")
+link = upload_image("spooky.jpg")
+urllib.URLopener().retrieve(link, "extra_spooky.jpg")
