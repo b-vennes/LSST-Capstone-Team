@@ -3,10 +3,10 @@ import boto3
 import subprocess
 import random
 from boto3.dynamodb.conditions import Key, Attr
-import lsst.daf.persistence as dafPersist
-import lsst.afw.display as afwDisplay
-import lsst.afw.geom as afwGeom
-import lsst.afw.image as afwImage
+# import lsst.daf.persistence as dafPersist
+# import lsst.afw.display as afwDisplay
+# import lsst.afw.geom as afwGeom
+# import lsst.afw.image as afwImage
 
 
 def create_image():
