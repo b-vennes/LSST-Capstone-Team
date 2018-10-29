@@ -3,10 +3,10 @@ import boto3
 import subprocess
 import random
 from boto3.dynamodb.conditions import Key, Attr
-# import lsst.daf.persistence as dafPersist
-# import lsst.afw.display as afwDisplay
-# import lsst.afw.geom as afwGeom
-# import lsst.afw.image as afwImage
+import lsst.daf.persistence as dafPersist
+import lsst.afw.display as afwDisplay
+import lsst.afw.geom as afwGeom
+import lsst.afw.image as afwImage
 
 
 def create_image():
@@ -48,7 +48,13 @@ def create_image():
                     bbox.include(afwGeom.Point2I(left,up))
                     bbox.include(afwGeom.Point2I(right,down))
                     cutout = calexp[bbox]
-                    print(type(cutout.image))
+                    print(type(cutout))
+                    try:
+                        cutout.writeFits("test.fits")
+                        print("wrote file?")
+                        break
+                    except:
+                        print("write fits error")
                 except:
                     print("Out of bounds -- fix that man")
 
