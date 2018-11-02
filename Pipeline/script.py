@@ -2,11 +2,19 @@ import os
 import boto3
 import subprocess
 import random
+
 from boto3.dynamodb.conditions import Key, Attr
+
 import lsst.daf.persistence as dafPersist
 import lsst.afw.display as afwDisplay
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from astropy.utils.data import download_file
+from astropy.io import fits
 
 
 def create_image():
@@ -62,3 +70,11 @@ def create_image():
         #put each croped image in blob
 
     return 0
+
+def convert_image(fits_image, output_name):
+    """
+    Converts a given fits image to a png
+    """
+    output_file = output_name + ".png"
+    image_data = fits.getdata(fits_image)
+    plt.imsave(output_file, image_data, cmap='gray')
