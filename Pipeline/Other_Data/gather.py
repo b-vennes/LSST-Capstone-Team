@@ -3,12 +3,15 @@ import urllib.request
 import re
 import os
 import random
+import sys
+sys.path.insert(0, '~/dev/LSST_Labeler/Pipeline')
+from database_connect_module import upload_image
 
 def get_hubble_comets(url="http://hubblesite.org/images/gallery/46-comets"):
     # 80 : 20 rule 80% will be training data 20% will be validation data
     base_url = "http://hubblesite.org"
     html_page = urllib.request.urlopen(url)
-    soup = BeautifulSoup(html_page)
+    soup = BeautifulSoup(html_page, features="html.parser")
     for link in soup.findAll('a'):
         if link.get('href') is None:
             continue
@@ -25,7 +28,7 @@ def get_hubble_comets(url="http://hubblesite.org/images/gallery/46-comets"):
 
 def get_next_page(url):
     html_page = urllib.request.urlopen(url)
-    soup = BeautifulSoup(html_page)
+    soup = BeautifulSoup(html_page, features="html.parser")
     for link in soup.findAll('a'):
         if link.get('href') is None:
             continue
@@ -42,12 +45,17 @@ def scrape(url):
         # print(image_link.get('href'))
         if "imgsrc" in image_link.get('href') and "jpg" in image_link.get('href'):
             urllib.request.urlretrieve(image_link.get('href'), "local.jpg")
-            # TODO:need a function to put this in the bolb and the DB
-            # if random.randint(0,10) > 2:
-            #     # part of training set
-            # else:
-            #     # part of validation set
             # TODO:mark all the sources in the image
+            # TODO:need a function to put this in the bolb and the DB
+            if random.randint(0,10) > 2:
+                #part of training set
+                link = upload_image(os.getcwd()+"/local.jpg", "comet_trainig")
+                print(link)
+            else:
+                # part of validation set
+                link = upload_image(os.getcwd()+"/local.jpg", "comet_validation")
+                print(link)
+
             os.reomve("local.jpg")
             break
 
