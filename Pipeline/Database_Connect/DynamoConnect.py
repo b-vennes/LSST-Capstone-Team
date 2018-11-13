@@ -5,7 +5,12 @@ import random
 import uuid
 import urllib.request
 from boto3.dynamodb.conditions import Key, Attr
+from botocore.exceptions import ClientError
 from shutil import copyfile
+
+# predefined values for region and endpoint
+dynamodb_region = 'us-west-2'
+dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
 
 def upload_image(image_path, source_name):
     """
@@ -61,41 +66,25 @@ def post_database(image_id, source_name):
     Creates a new item in the database with the given image id.
     """
 
-    # predefined values for region and endpoint
-    dynamodb_region = 'us-west-2'
-    dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
-
     # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
 
-    label_table = dynamodb.Table('Labels')
+    images_table = dynamodb.Table('Images')
 
-    response_labels = label_table.put_item(
+    put_response = images_table.put_item(
         Item={
-            'Image-ID': image_id,
+            'ID': image_id,
+            'Source': source_name,
             'Label': 'NULL'
         }
     )
 
-    source_table = dynamodb.Table('Sources')
-
-    response_sources = source_table.put_item(
-        Item={
-            'Image-ID': image_id,
-            'Source': source_name
-        }
-    )
-
-    return (response_labels, response_sources)
+    return put_response
 
 def random_image():
     """
     Retrieves a random image url by getting a random item from the database and creating its url string.
     """
-
-    # predefined values for region and endpoint
-    dynamodb_region = 'us-west-2'
-    dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
 
     # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
@@ -132,3 +121,47 @@ def get_image_link(image_id):
     )
 
     return image_link
+
+def delete_image(image_id):
+    """
+    deletes all data in the database and s3 associated with this id
+    """
+
+    # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+
+    images_table = dynamodb.Table('Images')
+
+    try:
+        images_delete_response = images_table.delete_item(
+            Key={
+                "ID": image_id
+            }
+        )
+    except ClientError as exception:
+        print(exception.response['Error']['Message'])
+
+    return images_delete_response
+
+def get_image_info(image_id):
+    """
+    retrieves the data for the given image
+    """
+
+     # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+
+    images_table = dynamodb.Table('Images')
+
+    try:
+        matches = images_table.get_item(
+            Key={
+                "ID": image_id
+            }
+        )
+    except ClientError as exception:
+        print(exception.response['Error']['Message'])
+
+    image_data = matches['Item']
+
+    return image_data
