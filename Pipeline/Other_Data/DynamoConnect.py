@@ -11,7 +11,7 @@ from shutil import copyfile
 # predefined values for region and endpoint
 dynamodb_region = 'us-west-2'
 dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
-global_table = 'Test'
+global_table = 'Images'
 
 def upload_image(image_path, source_name, label, vFlag):
     """
@@ -76,7 +76,7 @@ def post_database(image_id, source_name, label, vFlag):
         Item={
             'ID': image_id,
             'Source': source_name,
-            'Label': label
+            'Label': label,
             'Validation': vFlag
         }
     )
