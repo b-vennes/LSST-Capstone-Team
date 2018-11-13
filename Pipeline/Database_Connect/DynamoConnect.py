@@ -5,9 +5,14 @@ import random
 import uuid
 import urllib.request
 from boto3.dynamodb.conditions import Key, Attr
+from botocore.exceptions import ClientError
 from shutil import copyfile
 
-def upload_image(image_path):
+# predefined values for region and endpoint
+dynamodb_region = 'us-west-2'
+dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
+
+def upload_image(image_path, source_name):
     """
     Uploads the given image to the s3 bucket with a random identifier.
     Creates a new item in the database with the identifier.
@@ -25,7 +30,7 @@ def upload_image(image_path):
     os.remove(copy_image)
 
     # add the unique id to the database
-    post_database(unique_id)
+    post_database(unique_id, source_name)
 
     return new_link
 
@@ -56,44 +61,34 @@ def post_image(image_path):
 
     return image_link
 
-def post_database(image_id):
+def post_database(image_id, source_name):
     """
     Creates a new item in the database with the given image id.
     """
 
-    # predefined values for region and endpoint
-    dynamodb_region = 'us-west-2'
-    dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
-
     # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
 
-    table_name = 'LSST-Images'
+    images_table = dynamodb.Table('Images')
 
-    table = dynamodb.Table(table_name)
-
-    response = table.put_item(
+    put_response = images_table.put_item(
         Item={
-            'ImageId': image_id,
+            'ID': image_id,
+            'Source': source_name,
             'Label': 'NULL'
         }
     )
 
-    return response
+    return put_response
 
 def random_image():
     """
     Retrieves a random image url by getting a random item from the database and creating its url string.
     """
 
-    # predefined values for region and endpoint
-    dynamodb_region = 'us-west-2'
-    dynamodb_endpoint ='http://dynamodb.us-west-2.amazonaws.com'
-
     # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
-    table_name = 'LSST-Images'
-    table = dynamodb.Table(table_name)
+    table = dynamodb.Table('Labels')
 
     # take arandom value from all the values currently in the table
     response = table.scan()
@@ -101,7 +96,7 @@ def random_image():
 
     items = response['Items']
 
-    random_image_id = items[randomIndex]['ImageId']
+    random_image_id = items[randomIndex]['Image-ID']
 
     link = get_image_link(random_image_id)
 
@@ -127,5 +122,46 @@ def get_image_link(image_id):
 
     return image_link
 
-link = upload_image("spooky.jpg")
-urllib.request.urlretrieve(link, "extra_spooky.jpg")
+def delete_image(image_id):
+    """
+    deletes all data in the database and s3 associated with this id
+    """
+
+    # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+
+    images_table = dynamodb.Table('Images')
+
+    try:
+        images_delete_response = images_table.delete_item(
+            Key={
+                "ID": image_id
+            }
+        )
+    except ClientError as exception:
+        print(exception.response['Error']['Message'])
+
+    return images_delete_response
+
+def get_image_info(image_id):
+    """
+    retrieves the data for the given image
+    """
+
+     # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+
+    images_table = dynamodb.Table('Images')
+
+    try:
+        matches = images_table.get_item(
+            Key={
+                "ID": image_id
+            }
+        )
+    except ClientError as exception:
+        print(exception.response['Error']['Message'])
+
+    image_data = matches['Item']
+
+    return image_data
