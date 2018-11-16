@@ -1,5 +1,5 @@
-import space_classifier
+import SpaceClassifier
 
 def test_classify_images():
     # run classifier and see if it runs without errors
-    space_classifier.classify_images()
+    SpaceClassifier.classify_images()
