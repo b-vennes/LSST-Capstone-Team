@@ -3,6 +3,8 @@ import os
 import pytest
 import boto3
 import urllib.request as urlreq
+import json
+import requests
 
 def test_post_image():
     """
@@ -60,9 +62,5 @@ def test_upload_image():
     assert os.path.isfile(image_destination)
     
     os.remove(image_destination)
-
-    
-
-
 
 
