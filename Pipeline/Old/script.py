@@ -50,7 +50,7 @@ def create_image():
                     cutout = calexp[bbox]
                     print(type(cutout))
                     try:
-                        cutout.writeFits("test.fits")
+                        cutout.writeFits("test.jpg")
                         print("wrote file?")
                         break
                     except:
