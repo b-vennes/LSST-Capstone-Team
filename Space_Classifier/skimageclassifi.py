@@ -1,29 +1,13 @@
-from sklearn import datasets, svm, metrics
+from sklearn.linear_model import SGDClassifier
 from skimage import io
 import matplotlib.image as img
 from astropy.io import fits
 import numpy
-
-def train_model_fits():
-    """
-    Trains a new prediction model for classifying fits files as comets or not.
-    """
-
-    eagle_fits = fits.open('502nmos.fits')
-
-    eagle_data = eagle_fits[0].data
-
-    test_features = [eagle_data.flatten(), eagle_data.flatten()]
-
-    test_targets = [0,1]
-
-    classifier = svm.SVC(gamma=0.001)
-
-    classifier.fit(test_features,test_targets)
+import PIL.Image as Image
 
 def train_model(training_features, training_targets):
 
-    clf = svm.SVC(gamma=0.001)
+    clf = SGDClassifier()
 
     # training features must be an array of data arrays
     # training targets must be an array of integer labels
@@ -43,7 +27,7 @@ def load_model(file_name):
     return loaded_clf
 
 import DynamoConnect
-import urllib.request as urlreq
+from urllib.request import urlretrieve
 import os
 def load_data():
     """
@@ -59,6 +43,8 @@ def load_data():
     validation_arrays = []
     validation_labels = []
 
+    retrieve_count = 0
+
     for identifier in image_ids:
         # download the image from s3
         image_link = DynamoConnect.get_image_link(identifier)
@@ -67,11 +53,12 @@ def load_data():
 
         print("Image Link:", image_link)
 
-        urlreq.urlretrieve(image_link, image_location)
+        urlretrieve(image_link, image_location)
 
-        img = io.imread(image_location, as_gray=True)
+        # resize image to standard size
+        Image.open(image_location).resize((20,20), Image.ANTIALIAS).save(image_location)
 
-        array = img.flatten()
+        array = io.imread(image_location, as_gray=True).flatten()
 
         os.remove(image_location)
 
@@ -91,6 +78,34 @@ def load_data():
             print("Adding to training set:", identifier)
             training_arrays.append(array)
             training_labels.append(label)
+
+        # for now retrieve 4 images
+        if retrieve_count == 20:
+            break
+        else:
+            retrieve_count += 1
         
     # return two tuples, training and validation tuples
     return (training_arrays, training_labels), (validation_arrays, validation_labels)
+
+
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import confusion_matrix
+def main():
+    # use the database images
+    (training_features,training_targets), (validation_features, validation_targets) = load_data()
+
+    clf_model = train_model(training_features,training_targets)
+
+    test_predictions = cross_val_predict(clf_model, training_features, training_targets, cv=3)
+
+    print("Test Predictions:", test_predictions)
+
+    print("Actual:", training_targets)
+
+    conf_matrix = confusion_matrix(training_targets, test_predictions)
+
+    print(conf_matrix)
+
+if __name__ == "__main__":
+    main()
