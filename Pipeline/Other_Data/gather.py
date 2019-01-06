@@ -61,9 +61,3 @@ def scrape(url, gallery_name, label):
                 link = db.upload_image("local.jpg", url, label, True)
                 print(link)
             break
-
-
-
-def get_hubble_other(url="http://hubblesite.org/images/gallery/2-stars"):
-    # get images that dont contain comets with the same 80 : 20 rule
-    pass
