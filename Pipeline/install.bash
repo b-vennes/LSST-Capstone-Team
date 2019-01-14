@@ -7,3 +7,5 @@ source loadLSST.bash
 eups distrib install -t v16_0 lsst_distrib
 curl -sSL https://raw.githubusercontent.com/lsst/shebangtron/master/shebangtron | python
 setup lsst_distrib
+cd ..
+cp -a /bash_scripts/. /lsst_stack/
