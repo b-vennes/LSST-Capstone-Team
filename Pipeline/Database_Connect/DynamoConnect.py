@@ -1,3 +1,5 @@
+# this file is a modifiedcopy from the one in Database_Connect, please use that one directly at some point thanks
+
 import os
 import boto3
 import subprocess
@@ -114,7 +116,7 @@ def get_image_link(image_id):
     # get the zone for the bucket, to be added to the url
     bucket_zone = boto3.client('s3').get_bucket_location(Bucket=bucket_name)
 
-    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}.png".format(
+    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}.jpg".format(
         bucket_zone['LocationConstraint'],
         bucket_name,
         image_id
@@ -162,6 +164,26 @@ def get_image_info(image_id):
     except ClientError as exception:
         print(exception.response['Error']['Message'])
 
-    image_data = matches['Item']
+    return matches['Item']
 
-    return image_data
+def get_image_ids():
+    """
+    retrieves all ids in the database
+    """
+
+    # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+    table = dynamodb.Table('Images')
+
+    all_items = (table.scan())['Items']
+
+    id_list = []
+
+    for item in all_items:
+        item_id = item['ID']
+        id_list.append(item_id)
+
+    return id_list
+
+        
+
