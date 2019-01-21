@@ -29,38 +29,68 @@ def load_model(file_name):
 import DynamoConnect
 from urllib.request import urlretrieve
 import os
-def load_data():
+def import_data():
     """
-    Downloads all the image files in the database.
-    Creates a test and validation set of data and category pairs
+    Downloads all the image files in the database to the local images folder.
     """
 
-    image_ids = DynamoConnect.get_image_ids()
+    database_image_ids = DynamoConnect.get_image_ids()
 
-    training_arrays = []
-    training_labels = []
+    print("database ids:", database_image_ids)
 
-    validation_arrays = []
-    validation_labels = []
+    this_directory = os.path.dirname(__file__)
 
-    retrieve_count = 0
+    local_images_file = open(os.path.join(this_directory, "Images", "image_ids.list"), "r+")
+    local_image_ids = local_images_file.read().splitlines()
 
-    for identifier in image_ids:
+    print("local ids:", local_image_ids)
+
+    i = 0
+
+    for identifier in database_image_ids:
+
+        if i > 50:
+            break
+        
+        i += 1
+
+        if any(identifier in id_value for id_value in local_image_ids):
+            print("identifier", identifier, "found")
+            continue
+
         # download the image from s3
         image_link = DynamoConnect.get_image_link(identifier)
 
-        image_location = identifier + ".jpg"
+        image_name = identifier + ".jpg"
+        image_location = os.path.join(this_directory, "Images", image_name)
 
         print("Image Link:", image_link)
 
         urlretrieve(image_link, image_location)
 
         # resize image to standard size
-        Image.open(image_location).resize((20,20), Image.ANTIALIAS).save(image_location)
+        Image.open(image_location).resize((28,28), Image.ANTIALIAS).save(image_location)
 
+        print(identifier,file=local_images_file)
+
+    local_images_file.close
+
+def load_data():
+    
+    this_directory = os.path.dirname(__file__)
+
+    local_images_file = open(os.path.join(this_directory, "Images", "image_ids.list"), "r+")
+    local_image_ids = local_images_file.read().splitlines()
+
+    validation_arrays = []
+    validation_labels = []
+    training_arrays = []
+    training_labels = []
+
+    for identifier in local_image_ids:
+        image_name = identifier + ".jpg"
+        image_location = os.path.join(this_directory, "Images", image_name)
         array = io.imread(image_location, as_gray=True).flatten()
-
-        os.remove(image_location)
 
         image_info = DynamoConnect.get_image_info(identifier)
 
@@ -78,16 +108,9 @@ def load_data():
             print("Adding to training set:", identifier)
             training_arrays.append(array)
             training_labels.append(label)
-
-        # for now retrieve 4 images
-        if retrieve_count == 20:
-            break
-        else:
-            retrieve_count += 1
         
     # return two tuples, training and validation tuples
     return (training_arrays, training_labels), (validation_arrays, validation_labels)
-
 
 from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import confusion_matrix
@@ -97,13 +120,13 @@ def main():
 
     clf_model = train_model(training_features,training_targets)
 
-    test_predictions = cross_val_predict(clf_model, training_features, training_targets, cv=3)
+    test_predictions = cross_val_predict(clf_model, validation_features, validation_targets, cv=3)
 
     print("Test Predictions:", test_predictions)
 
     print("Actual:", training_targets)
 
-    conf_matrix = confusion_matrix(training_targets, test_predictions)
+    conf_matrix = confusion_matrix(validation_targets, test_predictions)
 
     print(conf_matrix)
 
