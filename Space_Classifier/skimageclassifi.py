@@ -4,6 +4,9 @@ import matplotlib.image as img
 from astropy.io import fits
 import numpy
 import PIL.Image as Image
+import sys
+sys.path.append("..")
+from Pipeline.Database_Connect import DynamoConnect
 
 def train_model(training_features, training_targets):
 
@@ -26,7 +29,6 @@ def load_model(file_name):
     loaded_clf = load(file_name)
     return loaded_clf
 
-import DynamoConnect
 from urllib.request import urlretrieve
 import os
 def import_data():
