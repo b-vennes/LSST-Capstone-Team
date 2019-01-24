@@ -1,5 +1,6 @@
 from sklearn.linear_model import SGDClassifier
 from skimage import io
+import tensorflow as tf
 import matplotlib.image as img
 from astropy.io import fits
 import numpy
@@ -8,7 +9,26 @@ import sys
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-def train_model(training_features, training_targets):
+def build_cnn_estimator():
+    ((training_arrays, training_labels,), (validation_arrays, validation_labels)) = load_data()
+
+    input_layer = tf.reshape(training_arrays, [-1, 28, 28, 1])
+
+    height = 28
+    width = 28
+    channels = 1
+
+
+    X = tf.placeholder(shape=(None, height, width, channels), dtype=tf.float32)
+
+    conv = tf.layers.conv2d(X, filters=2, kernel_size=5, strides=[2,2], padding="SAME")
+
+    with tf.Session() as session:
+        conv_output = session.run(conv, feed_dict={X: input_layer})
+
+    return conv_output
+
+def train_sgd_model(training_features, training_targets):
 
     clf = SGDClassifier()
 
@@ -84,7 +104,7 @@ def load_data():
     local_images_file = open(os.path.join(this_directory, "Images", "image_ids.list"), "r+")
     local_image_ids = local_images_file.read().splitlines()
 
-    validation_arrays = []
+    validation_arrays =
     validation_labels = []
     training_arrays = []
     training_labels = []
@@ -92,7 +112,8 @@ def load_data():
     for identifier in local_image_ids:
         image_name = identifier + ".jpg"
         image_location = os.path.join(this_directory, "Images", image_name)
-        array = io.imread(image_location, as_gray=True).flatten()
+
+        array = numpy.asarray(Image.open(image_location))
 
         image_info = DynamoConnect.get_image_info(identifier)
 
@@ -110,7 +131,7 @@ def load_data():
             print("Adding to training set:", identifier)
             training_arrays.append(array)
             training_labels.append(label)
-        
+
     # return two tuples, training and validation tuples
     return (training_arrays, training_labels), (validation_arrays, validation_labels)
 
