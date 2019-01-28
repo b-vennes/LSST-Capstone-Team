@@ -35,13 +35,15 @@ def build_and_train_cnn(image_arrays, image_labels, image_height, image_width, i
     # determine likelihood of each class
     logits = tf.layers.dense(inputs=dropout, units=2)
 
+    training_layer = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=image_labels, logits=logits)
+
     # run it!
     with tf.Session() as session:
         tf.global_variables_initializer().run()
         # starts from logits layer and works its way up the chain
-        output = session.run(logits, feed_dict={input_placeholder:image_arrays})
+        output = session.run(training_layer, feed_dict={input_placeholder:image_arrays})
 
-    # return some random bullshit for now
+    # for now just return the results I guess
     return output
 
 def train_sgd_model(training_features, training_targets):
