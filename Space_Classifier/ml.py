@@ -40,10 +40,7 @@ def build_and_train_cnn(image_arrays, image_labels, image_height, image_width, i
 
     # make predictions
     predictions = {
-        # Generate predictions (for PREDICT and EVAL mode)
         "classes": tf.argmax(input=logits, axis=1),
-        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
-        # `logging_hook`.
         "probabilities": tf.nn.sparse_softmax_cross_entropy_with_logits(labels=image_labels, logits=logits)
     }
 
