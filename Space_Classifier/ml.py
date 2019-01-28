@@ -1,4 +1,5 @@
 from sklearn.linear_model import SGDClassifier
+from skimage import color
 from skimage import io
 import tensorflow as tf
 import matplotlib.image as img
@@ -9,24 +10,17 @@ import sys
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-def build_cnn_estimator():
-    ((training_arrays, training_labels,), (validation_arrays, validation_labels)) = load_data()
+def build_cnn(image_arrays, image_labels, image_height, image_width, image_channels):
 
-    input_layer = tf.reshape(training_arrays, [-1, 28, 28, 1])
+    x = tf.placeholder(tf.float32, shape=(None, image_height, image_width))
+    x_im = tf.reshape(x, shape=(1, image_height, image_width, image_channels))
 
-    height = 28
-    width = 28
-    channels = 1
-
-
-    X = tf.placeholder(shape=(None, height, width, channels), dtype=tf.float32)
-
-    conv = tf.layers.conv2d(X, filters=2, kernel_size=5, strides=[2,2], padding="SAME")
+    convolution_layer_1 = tf.layers.conv2d(x_im, filters=2, kernel_size=7, strides=[2,2], padding="SAME")
 
     with tf.Session() as session:
-        conv_output = session.run(conv, feed_dict={X: input_layer})
+        output = session.run(convolution_layer_1, feed_dict={x:image_arrays})
 
-    return conv_output
+    #print(output)
 
 def train_sgd_model(training_features, training_targets):
 
@@ -104,16 +98,22 @@ def load_data():
     local_images_file = open(os.path.join(this_directory, "Images", "image_ids.list"), "r+")
     local_image_ids = local_images_file.read().splitlines()
 
-    validation_arrays =
+    validation_arrays = []
     validation_labels = []
     training_arrays = []
     training_labels = []
 
+    i = 0
+
     for identifier in local_image_ids:
+
+        if i > 10:
+            break
+        i += 1
         image_name = identifier + ".jpg"
         image_location = os.path.join(this_directory, "Images", image_name)
 
-        array = numpy.asarray(Image.open(image_location))
+        array = color.rgb2gray(io.imread(image_location))
 
         image_info = DynamoConnect.get_image_info(identifier)
 
@@ -139,19 +139,19 @@ from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import confusion_matrix
 def main():
     # use the database images
-    (training_features,training_targets), (validation_features, validation_targets) = load_data()
+    (training_features, training_targets), (validation_features, validation_targets) = load_data()
 
-    clf_model = train_model(training_features,training_targets)
+    build_cnn(training_features, training_targets, 28, 28, 1)
 
-    test_predictions = cross_val_predict(clf_model, validation_features, validation_targets, cv=3)
+    #test_predictions = cross_val_predict(clf_model, validation_features, validation_targets, cv=3)
 
-    print("Test Predictions:", test_predictions)
+    #print("Test Predictions:", test_predictions)
 
-    print("Actual:", training_targets)
+    #print("Actual:", training_targets)
 
-    conf_matrix = confusion_matrix(validation_targets, test_predictions)
+    #conf_matrix = confusion_matrix(validation_targets, test_predictions)
 
-    print(conf_matrix)
+    #print(conf_matrix)
 
 if __name__ == "__main__":
     main()
