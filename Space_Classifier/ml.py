@@ -12,15 +12,15 @@ from Pipeline.Database_Connect import DynamoConnect
 
 def build_cnn(image_arrays, image_labels, image_height, image_width, image_channels):
 
-    x = tf.placeholder(tf.float32, shape=(None, image_height, image_width))
-    x_im = tf.reshape(x, shape=(1, image_height, image_width, image_channels))
-
-    convolution_layer_1 = tf.layers.conv2d(x_im, filters=2, kernel_size=7, strides=[2,2], padding="SAME")
+    x = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channels))
+    convolution_layer_1 = tf.layers.conv2d(x, filters=2, kernel_size=7, strides=[2,2], padding="SAME")
 
     with tf.Session() as session:
+        tf.global_variables_initializer().run()
+        tf.tables_initializer().run()
         output = session.run(convolution_layer_1, feed_dict={x:image_arrays})
 
-    #print(output)
+    print(output)
 
 def train_sgd_model(training_features, training_targets):
 
@@ -113,7 +113,7 @@ def load_data():
         image_name = identifier + ".jpg"
         image_location = os.path.join(this_directory, "Images", image_name)
 
-        array = color.rgb2gray(io.imread(image_location))
+        array = io.imread(image_location)
 
         image_info = DynamoConnect.get_image_info(identifier)
 
@@ -133,7 +133,7 @@ def load_data():
             training_labels.append(label)
 
     # return two tuples, training and validation tuples
-    return (training_arrays, training_labels), (validation_arrays, validation_labels)
+    return (numpy.array(training_arrays, dtype=numpy.float32), training_labels), (validation_arrays, validation_labels)
 
 from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import confusion_matrix
@@ -141,7 +141,7 @@ def main():
     # use the database images
     (training_features, training_targets), (validation_features, validation_targets) = load_data()
 
-    build_cnn(training_features, training_targets, 28, 28, 1)
+    build_cnn(training_features, training_targets, 28, 28, 3)
 
     #test_predictions = cross_val_predict(clf_model, validation_features, validation_targets, cv=3)
 
