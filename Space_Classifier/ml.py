@@ -1,26 +1,48 @@
 from sklearn.linear_model import SGDClassifier
-from skimage import color
 from skimage import io
+from skimage.transform import rescale, resize
 import tensorflow as tf
 import matplotlib.image as img
+import matplotlib.pyplot as plt
 from astropy.io import fits
 import numpy
-import PIL.Image as Image
 import sys
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-def build_cnn(image_arrays, image_labels, image_height, image_width, image_channels):
+def build_and_train_cnn(image_arrays, image_labels, image_height, image_width, image_channels):
+    # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
 
-    x = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channels))
-    convolution_layer_1 = tf.layers.conv2d(x, filters=2, kernel_size=7, strides=[2,2], padding="SAME")
+    # need to restructure image data into a format that tensorflow expects (have to add an inner channel array)
+    image_arrays = numpy.expand_dims(image_arrays, axis=3)
 
+    # placeholder variable  for our images array
+    input_placeholder = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channels))
+
+    # first convolution layer with 2 filters and a kernel size of 7
+    convolution_layer_1 = tf.layers.conv2d(input_placeholder, filters=3, kernel_size=7, strides=[2,2], padding="SAME")
+
+    # build first pooling layer?
+    pool_layer_1 = tf.layers.max_pooling2d(convolution_layer_1, pool_size=[2,2], strides=2)
+
+    # build a dense layer?
+    (_, pool_layer_1_height, pool_layer_1_width, pool_layer_1_channels) = pool_layer_1.shape
+    flattened = tf.reshape(pool_layer_1, shape=[-1, pool_layer_1_height * pool_layer_1_width * pool_layer_1_channels])
+    dense = tf.layers.dense(inputs=flattened, units=1024)
+    
+    # dropout?
+    dropout = tf.layers.dropout(dense)
+    # determine likelihood of each class
+    logits = tf.layers.dense(inputs=dropout, units=2)
+
+    # run it!
     with tf.Session() as session:
         tf.global_variables_initializer().run()
-        tf.tables_initializer().run()
-        output = session.run(convolution_layer_1, feed_dict={x:image_arrays})
+        # starts from logits layer and works its way up the chain
+        output = session.run(logits, feed_dict={input_placeholder:image_arrays})
 
-    print(output)
+    # return some random bullshit for now
+    return output
 
 def train_sgd_model(training_features, training_targets):
 
@@ -52,20 +74,16 @@ def import_data():
 
     database_image_ids = DynamoConnect.get_image_ids()
 
-    print("database ids:", database_image_ids)
-
     this_directory = os.path.dirname(__file__)
 
     local_images_file = open(os.path.join(this_directory, "Images", "image_ids.list"), "r+")
     local_image_ids = local_images_file.read().splitlines()
 
-    print("local ids:", local_image_ids)
-
     i = 0
 
     for identifier in database_image_ids:
 
-        if i > 50:
+        if i >= 10:
             break
         
         i += 1
@@ -80,13 +98,14 @@ def import_data():
         image_name = identifier + ".jpg"
         image_location = os.path.join(this_directory, "Images", image_name)
 
-        print("Image Link:", image_link)
-
         urlretrieve(image_link, image_location)
 
-        # resize image to standard size
-        Image.open(image_location).resize((28,28), Image.ANTIALIAS).save(image_location)
+        # preprocess data images
+        image_data = io.imread(image_location, as_gray=True)
+        image_data = resize(image_data, (28,28), anti_aliasing=True)
+        io.imsave(image_location, image_data)
 
+        # save id to list file
         print(identifier,file=local_images_file)
 
     local_images_file.close
@@ -113,7 +132,7 @@ def load_data():
         image_name = identifier + ".jpg"
         image_location = os.path.join(this_directory, "Images", image_name)
 
-        array = io.imread(image_location)
+        array = io.imread(image_location, as_gray=True)
 
         image_info = DynamoConnect.get_image_info(identifier)
 
@@ -141,7 +160,9 @@ def main():
     # use the database images
     (training_features, training_targets), (validation_features, validation_targets) = load_data()
 
-    build_cnn(training_features, training_targets, 28, 28, 3)
+    garbage_pile = build_and_train_cnn(training_features, training_targets, 28, 28, 1)
+
+    print(garbage_pile)
 
     #test_predictions = cross_val_predict(clf_model, validation_features, validation_targets, cv=3)
 
