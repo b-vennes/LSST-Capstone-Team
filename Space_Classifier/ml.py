@@ -2,6 +2,7 @@ from sklearn.linear_model import SGDClassifier
 from skimage import io
 from skimage.transform import rescale, resize
 import tensorflow as tf
+from tensorflow import keras
 import matplotlib.image as img
 import matplotlib.pyplot as plt
 from astropy.io import fits
@@ -26,60 +27,98 @@ num_filters2 = 36         # There are 36 of these filters.
 # Fully-connected layer.
 fc_size = 128             # Number of neurons in fully-connected layer.
 
-def build_and_train_cnn(image_arrays, image_labels, image_height, image_width, image_channels):
+def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, image_height, image_width, image_channels):
     # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
 
     # need to restructure image data into a format that tensorflow expects (have to add an inner channel because its grayscale)
     image_arrays = numpy.expand_dims(image_arrays, axis=3)
 
+    test_arrays = numpy.expand_dims(test_arrays, axis=3)
+
     # placeholder variable for our images array
     input_placeholder = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channels))
+    labels_placeholder = tf.placeholder(tf.int32)
 
-    # first convolution layer with 3 filters and a kernel size of 7
-    # strides?
-    convolution_layer_1 = tf.layers.conv2d(input_placeholder, filters=3, kernel_size=7, strides=[2,2], padding="SAME")
+    # first convolution layer
+    conv1 = tf.layers.conv2d(
+      inputs=input_placeholder,
+      filters=2,
+      kernel_size=5,
+      padding="same",
+      activation=tf.nn.relu)
 
-    # build first pooling layer?
-    pool_layer_1 = tf.layers.max_pooling2d(convolution_layer_1, pool_size=[2,2], strides=2)
+    # first pooling layer
+    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
 
-    # build a dense layer?
-    (_, pool_layer_1_height, pool_layer_1_width, pool_layer_1_channels) = pool_layer_1.shape
-    flattened = tf.reshape(pool_layer_1, shape=[-1, pool_layer_1_height * pool_layer_1_width * pool_layer_1_channels])
-    dense = tf.layers.dense(inputs=flattened, units=1024)
-    
-    # dropout?
-    dropout = tf.layers.dropout(dense, rate=0.4)
-    # determine likelihood of each class (either a star or not)
+    # second convolution layer
+    conv2 = tf.layers.conv2d(
+      inputs=pool1,
+      filters=4,
+      kernel_size=5,
+      padding="same",
+      activation=tf.nn.relu)
+
+    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+
+    pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 4])
+    dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
+    dropout = tf.layers.dropout(
+      inputs=dense, rate=0.4)
+
     logits = tf.layers.dense(inputs=dropout, units=2)
 
-    # make predictions
-    predictions = {
+    predict = {
+        # Generate predictions (for PREDICT and EVAL mode)
         "classes": tf.argmax(input=logits, axis=1),
-        "probabilities": tf.nn.sparse_softmax_cross_entropy_with_logits(labels=image_labels, logits=logits)
+        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
+        # `logging_hook`.
+        "probabilities": tf.nn.softmax(logits)
     }
 
-    # determine loss
-    loss = tf.losses.sparse_softmax_cross_entropy(labels=image_labels, logits=logits)
+    # calculate loss
+    losses = tf.losses.sparse_softmax_cross_entropy(labels=image_labels, logits=logits)
 
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001).minimize(loss=loss)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+    train_op = optimizer.minimize(
+        loss=losses)
 
     # run it!
     with tf.Session() as session:
         # initialize the environment
         tf.global_variables_initializer().run()
 
-        # run the optimizer 10000 times!
-        for i in range(10000):
-            print(i)
-            session.run(optimizer, feed_dict={input_placeholder:image_arrays})
+        for i in range(0,15):
+            print("run",i)
+            predicted = session.run(predict, feed_dict={input_placeholder:image_arrays})
+            session.run(train_op, feed_dict={input_placeholder:image_arrays})
+
+        test_prediction = session.run(predict, feed_dict={input_placeholder:test_arrays})
+
+    # determine accuracy
+    iterator = 0
+    trousers_correct = 0
+    trousers_attempts = 0
+    others_correct = 0
+    others_attempts = 0
+    while iterator < len(test_prediction["classes"]):
+        if test_labels[iterator]:
+            trousers_attempts += 1
+
+            if test_prediction["classes"][iterator] == 1:
+                trousers_correct += 1
         
-        # get predictions!
-        output = session.run(predictions, feed_dict={input_placeholder:image_arrays})
+        else:
+            others_attempts += 1
 
-    # for now just return the results I guess
-    return output
+            if test_prediction["classes"][iterator] == 0:
+                others_correct += 1
+        
+        iterator += 1
+    
+    confusion_matrix = [trousers_correct, trousers_attempts - trousers_correct], [others_correct, others_attempts - others_correct]
+    print(confusion_matrix)
 
-def cnn(image_arrays, image_labels, image_height, image_width, image_channels):
+def cnn_2(image_arrays, image_labels, image_height, image_width, image_channels):
     # need to restructure image data into a format that tensorflow expects (have to add an inner channel because its grayscale)
     image_arrays = numpy.expand_dims(image_arrays, axis=3)
 
@@ -259,11 +298,32 @@ def load_data():
 
 def main():
     # use the database images
-    (training_features, training_targets), (validation_features, validation_targets) = load_data()
+    #(training_features, training_targets), (validation_features, validation_targets) = load_data()
 
-    garbage_pile = build_and_train_cnn(training_features, training_targets, 28, 28, 1)
+    # use fashion set
+    fashion_mnist = keras.datasets.fashion_mnist
 
-    print(garbage_pile)
+    (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+
+    train_images = train_images/255
+
+    trouser_not_trouser_labels = []
+
+    test_trouser_not_trouser_labels = []
+
+    for label in train_labels:
+        if label == 1:
+            trouser_not_trouser_labels.append(1)
+        else:
+            trouser_not_trouser_labels.append(0)
+
+    for test_label in test_labels:
+        if test_label == 1:
+            test_trouser_not_trouser_labels.append(1)
+        else:
+            test_trouser_not_trouser_labels.append(0)
+
+    build_and_train_cnn(train_images, trouser_not_trouser_labels, test_images, test_trouser_not_trouser_labels, 28, 28, 1)
 
 if __name__ == "__main__":
     main()
