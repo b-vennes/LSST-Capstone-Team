@@ -35,14 +35,16 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
 
     test_arrays = numpy.expand_dims(test_arrays, axis=3)
 
+    image_labels = numpy.reshape(image_labels, newshape=(len(image_labels), 1))
+
     # placeholder variable for our images array
     input_placeholder = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channels))
-    labels_placeholder = tf.placeholder(tf.int32)
+    label_placeholder = tf.placeholder(tf.int32)
 
     # first convolution layer
     conv1 = tf.layers.conv2d(
       inputs=input_placeholder,
-      filters=2,
+      filters=8,
       kernel_size=5,
       padding="same",
       activation=tf.nn.relu)
@@ -53,17 +55,17 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
     # second convolution layer
     conv2 = tf.layers.conv2d(
       inputs=pool1,
-      filters=4,
+      filters=16,
       kernel_size=5,
       padding="same",
       activation=tf.nn.relu)
 
     pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
-    pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 4])
+    pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 16])
     dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
     dropout = tf.layers.dropout(
-      inputs=dense, rate=0.4)
+      inputs=dense, rate=0.6)
 
     logits = tf.layers.dense(inputs=dropout, units=2)
 
@@ -72,25 +74,31 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
         "classes": tf.argmax(input=logits, axis=1),
         # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
         # `logging_hook`.
+        # dont need for now
         "probabilities": tf.nn.softmax(logits)
     }
 
-    # calculate loss
-    losses = tf.losses.sparse_softmax_cross_entropy(labels=image_labels, logits=logits)
+    losses = tf.losses.sparse_softmax_cross_entropy(labels=label_placeholder, logits=logits)
 
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
-    train_op = optimizer.minimize(
-        loss=losses)
+
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        train_op = optimizer.minimize(losses)
 
     # run it!
     with tf.Session() as session:
         # initialize the environment
         tf.global_variables_initializer().run()
 
-        for i in range(0,15):
-            print("run",i)
-            predicted = session.run(predict, feed_dict={input_placeholder:image_arrays})
-            session.run(train_op, feed_dict={input_placeholder:image_arrays})
+        batch_size = 1000
+
+        image_batches = [image_arrays[i * batch_size:(i + 1) * batch_size] for i in range((len(image_arrays) + batch_size - 1) // batch_size)]
+        label_batches = [image_labels[i * batch_size:(i + 1) * batch_size] for i in range((len(image_labels) + batch_size - 1) // batch_size)]
+
+        for i in range(0,len(image_batches)):
+            session.run(train_op, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
+            print(session.run(predict, feed_dict={input_placeholder:image_batches[i]}))
 
         test_prediction = session.run(predict, feed_dict={input_placeholder:test_arrays})
 
