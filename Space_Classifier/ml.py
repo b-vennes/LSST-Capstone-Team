@@ -62,12 +62,19 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
 
     pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
-    pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 16])
-    dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
-    dropout = tf.layers.dropout(
-      inputs=dense, rate=0.6)
+    # third convolution layer
+    conv3 = tf.layers.conv2d(
+      inputs=pool2,
+      filters=32,
+      kernel_size=5,
+      padding="same",
+      activation=tf.nn.relu)
 
-    logits = tf.layers.dense(inputs=dropout, units=2)
+    pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
+
+    pancake = tf.reshape(pool3, [-1, 3 * 3 * 32])
+
+    logits = tf.layers.dense(inputs=pancake, units=2)
 
     predict = {
         # Generate predictions (for PREDICT and EVAL mode)
@@ -91,7 +98,7 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
         # initialize the environment
         tf.global_variables_initializer().run()
 
-        batch_size = 1000
+        batch_size = 20000
 
         image_batches = [image_arrays[i * batch_size:(i + 1) * batch_size] for i in range((len(image_arrays) + batch_size - 1) // batch_size)]
         label_batches = [image_labels[i * batch_size:(i + 1) * batch_size] for i in range((len(image_labels) + batch_size - 1) // batch_size)]
