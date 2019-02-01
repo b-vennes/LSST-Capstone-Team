@@ -27,6 +27,8 @@ num_filters2 = 36         # There are 36 of these filters.
 # Fully-connected layer.
 fc_size = 128             # Number of neurons in fully-connected layer.
 
+SPLIT_LINE = 0.5
+
 def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, image_height, image_width, image_channels):
     # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
 
@@ -39,12 +41,12 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
 
     # placeholder variable for our images array
     input_placeholder = tf.placeholder(tf.float32, shape=(None, image_height, image_width, image_channels))
-    label_placeholder = tf.placeholder(tf.int32)
+    label_placeholder = tf.placeholder(tf.float32)
 
     # first convolution layer
     conv1 = tf.layers.conv2d(
       inputs=input_placeholder,
-      filters=8,
+      filters=16,
       kernel_size=5,
       padding="same",
       activation=tf.nn.relu)
@@ -55,7 +57,7 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
     # second convolution layer
     conv2 = tf.layers.conv2d(
       inputs=pool1,
-      filters=16,
+      filters=32,
       kernel_size=5,
       padding="same",
       activation=tf.nn.relu)
@@ -65,49 +67,47 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
     # third convolution layer
     conv3 = tf.layers.conv2d(
       inputs=pool2,
-      filters=32,
+      filters=64,
       kernel_size=5,
       padding="same",
       activation=tf.nn.relu)
 
     pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
 
-    pancake = tf.reshape(pool3, [-1, 3 * 3 * 32])
+    # flatten out so that its easy to put into one neuron
+    pancake = tf.reshape(pool3, [-1, 3 * 3 * 64])
 
-    logits = tf.layers.dense(inputs=pancake, units=2)
+    # determine probability logits for likelihood that an image is true or false
+    logits = tf.layers.dense(inputs=pancake, units=1)
 
-    predict = {
-        # Generate predictions (for PREDICT and EVAL mode)
-        "classes": tf.argmax(input=logits, axis=1),
-        # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
-        # `logging_hook`.
-        # dont need for now
-        "probabilities": tf.nn.softmax(logits)
-    }
+    # use sigmoid function to activate the neuron
+    prediction = tf.nn.sigmoid(logits)
 
-    losses = tf.losses.sparse_softmax_cross_entropy(labels=label_placeholder, logits=logits)
+    # calculate losses with mean squared error function
+    losses = tf.losses.mean_squared_error(prediction,label_placeholder)
 
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+    average = tf.reduce_mean(prediction)
 
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    with tf.control_dependencies(update_ops):
-        train_op = optimizer.minimize(losses)
+    # minimize losses from the mean squared error function
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001).minimize(losses)
 
     # run it!
     with tf.Session() as session:
         # initialize the environment
         tf.global_variables_initializer().run()
 
-        batch_size = 20000
+        batch_size = 5000
 
         image_batches = [image_arrays[i * batch_size:(i + 1) * batch_size] for i in range((len(image_arrays) + batch_size - 1) // batch_size)]
         label_batches = [image_labels[i * batch_size:(i + 1) * batch_size] for i in range((len(image_labels) + batch_size - 1) // batch_size)]
 
         for i in range(0,len(image_batches)):
-            session.run(train_op, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
-            print(session.run(predict, feed_dict={input_placeholder:image_batches[i]}))
+            print("batch",i)
+            # run the optimizer with the labels from this batch
+            print("average prediction",session.run(average, feed_dict={input_placeholder:image_batches[i]}))
+            session.run(optimizer, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
 
-        test_prediction = session.run(predict, feed_dict={input_placeholder:test_arrays})
+        test_prediction = session.run(prediction, feed_dict={input_placeholder:test_arrays})
 
     # determine accuracy
     iterator = 0
@@ -115,17 +115,17 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
     trousers_attempts = 0
     others_correct = 0
     others_attempts = 0
-    while iterator < len(test_prediction["classes"]):
+    while iterator < len(test_prediction):
         if test_labels[iterator]:
             trousers_attempts += 1
 
-            if test_prediction["classes"][iterator] == 1:
+            if test_prediction[iterator] > SPLIT_LINE:
                 trousers_correct += 1
         
         else:
             others_attempts += 1
 
-            if test_prediction["classes"][iterator] == 0:
+            if test_prediction[iterator] <= SPLIT_LINE:
                 others_correct += 1
         
         iterator += 1
