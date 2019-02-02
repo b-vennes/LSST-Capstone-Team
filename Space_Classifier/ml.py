@@ -1,4 +1,5 @@
 from sklearn.linear_model import SGDClassifier
+from sklearn.utils import shuffle
 from skimage import io
 from skimage.transform import rescale, resize
 import tensorflow as tf
@@ -27,7 +28,14 @@ num_filters2 = 36         # There are 36 of these filters.
 # Fully-connected layer.
 fc_size = 128             # Number of neurons in fully-connected layer.
 
-SPLIT_LINE = 0.5
+
+BATCH_SIZE = 500
+
+CUTOFF_VALUE = 0.5
+
+LEARNING_RATE = 0.001
+
+NUM_OPTIMIZATIONS_PER_BATCH = 20
 
 def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, image_height, image_width, image_channels):
     # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
@@ -52,7 +60,7 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
       activation=tf.nn.relu)
 
     # first pooling layer
-    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=2, strides=2)
 
     # second convolution layer
     conv2 = tf.layers.conv2d(
@@ -62,7 +70,7 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
       padding="same",
       activation=tf.nn.relu)
 
-    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=2, strides=2)
 
     # third convolution layer
     conv3 = tf.layers.conv2d(
@@ -72,13 +80,16 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
       padding="same",
       activation=tf.nn.relu)
 
-    pool3 = tf.layers.max_pooling2d(inputs=conv3, pool_size=[2, 2], strides=2)
-
     # flatten out so that its easy to put into one neuron
-    pancake = tf.reshape(pool3, [-1, 3 * 3 * 64])
+    flatten = tf.reshape(conv3, [-1, 7 * 7 * 64])
+
+    # two fully connected layers
+    fc1 = tf.layers.dense(flatten, units=1024)
+    dropout1 = tf.layers.dropout(fc1, rate=0.5)
+    fc2 = tf.layers.dense(dropout1, units=256)
 
     # determine probability logits for likelihood that an image is true or false
-    logits = tf.layers.dense(inputs=pancake, units=1)
+    logits = tf.layers.dense(fc2, units=1)
 
     # use sigmoid function to activate the neuron
     prediction = tf.nn.sigmoid(logits)
@@ -86,29 +97,68 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
     # calculate losses with mean squared error function
     losses = tf.losses.mean_squared_error(prediction,label_placeholder)
 
-    average = tf.reduce_mean(prediction)
-
     # minimize losses from the mean squared error function
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001).minimize(losses)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(losses)
+
+    saver = tf.train.Saver()
 
     # run it!
     with tf.Session() as session:
         # initialize the environment
         tf.global_variables_initializer().run()
 
-        batch_size = 5000
+        image_batches = [image_arrays[i * BATCH_SIZE:(i + 1) * BATCH_SIZE] for i in range((len(image_arrays) + BATCH_SIZE - 1) // BATCH_SIZE)]
+        label_batches = [image_labels[i * BATCH_SIZE:(i + 1) * BATCH_SIZE] for i in range((len(image_labels) + BATCH_SIZE - 1) // BATCH_SIZE)]
 
-        image_batches = [image_arrays[i * batch_size:(i + 1) * batch_size] for i in range((len(image_arrays) + batch_size - 1) // batch_size)]
-        label_batches = [image_labels[i * batch_size:(i + 1) * batch_size] for i in range((len(image_labels) + batch_size - 1) // batch_size)]
+        for i in range(len(image_batches)):
+            print("batch",i+1)
+            # run the optimizer 10 times with the labels from this batch
+            for i in range(NUM_OPTIMIZATIONS_PER_BATCH):
+                print("--- optimize", i+1)
+                session.run(optimizer, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
 
-        for i in range(0,len(image_batches)):
-            print("batch",i)
-            # run the optimizer with the labels from this batch
-            print("average prediction",session.run(average, feed_dict={input_placeholder:image_batches[i]}))
-            session.run(optimizer, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
+        # # save model to file
+        # this_directory = os.path.dirname(__file__)
 
-        test_prediction = session.run(prediction, feed_dict={input_placeholder:test_arrays})
+        # saver.save(session, os.path.join(this_directory, "/ml_model.ckpt"))
 
+        test_set_prediction = session.run(prediction, feed_dict={input_placeholder:test_arrays})
+
+    test_accuracy = get_accuracy(test_set_prediction, test_labels)
+    evaluation, subset_accuracy, others_accuracy = get_confusion_matrix(test_set_prediction, test_labels)
+
+    for i in range(len(test_set_prediction)):
+        print(test_set_prediction[i],test_labels[i])
+
+    print("-------------------------")
+    print("- Evaluation Statistics -")
+    print("-------------------------")
+
+    print("total accuracy",test_accuracy)
+    print("shoes accuracy",subset_accuracy)
+    print("others accuracy",others_accuracy)
+    print("confusion matrix",evaluation)
+
+    return test_set_prediction
+
+def get_accuracy(test_prediction, expected_labels):
+    correct_num = 0
+    
+    iterator = 0
+    while iterator < len(test_prediction):
+        if expected_labels[iterator]:
+            if test_prediction[iterator] > CUTOFF_VALUE:
+                correct_num += 1
+        else:
+            if test_prediction[iterator] <= CUTOFF_VALUE:
+                correct_num += 1
+        
+        iterator += 1
+    
+    return correct_num/len(test_prediction)
+
+
+def get_confusion_matrix(test_prediction, expected_labels):
     # determine accuracy
     iterator = 0
     trousers_correct = 0
@@ -116,22 +166,27 @@ def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, im
     others_correct = 0
     others_attempts = 0
     while iterator < len(test_prediction):
-        if test_labels[iterator]:
+        if expected_labels[iterator]:
             trousers_attempts += 1
 
-            if test_prediction[iterator] > SPLIT_LINE:
+            if test_prediction[iterator] > CUTOFF_VALUE:
                 trousers_correct += 1
         
         else:
             others_attempts += 1
 
-            if test_prediction[iterator] <= SPLIT_LINE:
+            if test_prediction[iterator] <= CUTOFF_VALUE:
                 others_correct += 1
         
         iterator += 1
     
     confusion_matrix = [trousers_correct, trousers_attempts - trousers_correct], [others_correct, others_attempts - others_correct]
-    print(confusion_matrix)
+
+    subset_accuracy = trousers_correct/trousers_attempts
+
+    others_accuracy = others_correct/others_attempts
+
+    return confusion_matrix, subset_accuracy, others_accuracy
 
 def cnn_2(image_arrays, image_labels, image_height, image_width, image_channels):
     # need to restructure image data into a format that tensorflow expects (have to add an inner channel because its grayscale)
@@ -322,23 +377,33 @@ def main():
 
     train_images = train_images/255
 
+    test_images = test_images/255
+
     trouser_not_trouser_labels = []
 
     test_trouser_not_trouser_labels = []
 
     for label in train_labels:
+        # if label == 5 or label == 7 or label == 9:
         if label == 1:
             trouser_not_trouser_labels.append(1)
         else:
             trouser_not_trouser_labels.append(0)
 
     for test_label in test_labels:
+        # if test_label == 5 or test_label == 7 or test_label == 9:
         if test_label == 1:
             test_trouser_not_trouser_labels.append(1)
         else:
             test_trouser_not_trouser_labels.append(0)
 
-    build_and_train_cnn(train_images, trouser_not_trouser_labels, test_images, test_trouser_not_trouser_labels, 28, 28, 1)
+    # shuffle the arrays consistently so that their indexes remain lined up
+    train_images, trouser_not_trouser_labels = shuffle(train_images, trouser_not_trouser_labels)
+    test_images, test_trouser_not_trouser_labels = shuffle(test_images, test_trouser_not_trouser_labels)
+
+    predictions = build_and_train_cnn(train_images, trouser_not_trouser_labels, test_images, test_trouser_not_trouser_labels, 28, 28, 1)
+
+    return predictions
 
 if __name__ == "__main__":
     main()
