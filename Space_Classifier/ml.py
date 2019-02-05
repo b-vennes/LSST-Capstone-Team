@@ -29,13 +29,13 @@ num_filters2 = 36         # There are 36 of these filters.
 fc_size = 128             # Number of neurons in fully-connected layer.
 
 
-BATCH_SIZE = 500
+BATCH_SIZE = 100
 
 CUTOFF_VALUE = 0.5
 
 LEARNING_RATE = 0.001
 
-NUM_OPTIMIZATIONS_PER_BATCH = 20
+NUM_OPTIMIZATIONS_PER_BATCH = 30
 
 def build_and_train_cnn(image_arrays, image_labels, test_arrays, test_labels, image_height, image_width, image_channels):
     # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
