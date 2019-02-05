@@ -1,5 +1,3 @@
-# this file is a modifiedcopy from the one in Database_Connect, please use that one directly at some point thanks
-
 import os
 import boto3
 import subprocess
@@ -9,6 +7,11 @@ import urllib.request
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from shutil import copyfile
+import matplotlib.pyplot as plt
+from astropy.visualization import astropy_mpl_style
+from astropy.utils.data import get_pkg_data_filename
+from astropy.io import fits
+import aplpy
 
 # predefined values for region and endpoint
 dynamodb_region = 'us-west-2'
@@ -185,5 +188,23 @@ def get_image_ids():
 
     return id_list
 
-        
+def show_fits():
+    #Collect fits file
+    plt.style.use(astropy_mpl_style)
+    image_file = get_pkg_data_filename('tutorials/FITS-images/HorseHead.fits')
+    #Create a new figure to plot fits file with
+    f = aplpy.FITSFigure(image_file)
+    #Save file
+    f.save('my_first_plot.eps')
+    
+    #Display structure of file
+    fits.info(image_file)
 
+    #Get image details
+    image_data = fits.getdata(image_file, ext=0)
+    print(image_data.shape)
+
+    # Display the image data
+    plt.figure()
+    plt.imshow(image_data, cmap='gray')
+    plt.colorbar()
