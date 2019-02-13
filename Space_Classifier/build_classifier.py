@@ -3,13 +3,14 @@ from tensorflow import keras
 from sklearn.utils import shuffle
 import tensorflow as tf
 import numpy
+import os
 
 IMAGE_HEIGHT = 28
 IMAGE_WIDTH = 28
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 100
-NUM_OPTIMIZATIONS_PER_BATCH = 30
+BATCH_SIZE = 1000
+NUM_OPTIMIZATIONS_PER_BATCH = 10
 
 def main():
 
@@ -58,6 +59,8 @@ def main():
 
     graph, predictor, optimizer = ml_library.build_binary_classifier(input_placeholder, label_placeholder, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
+    saver = tf.train.Saver()
+
     # run it!
     with tf.Session() as session:
         # initialize the environment
@@ -72,6 +75,9 @@ def main():
             for i in range(NUM_OPTIMIZATIONS_PER_BATCH):
                 print("--- optimize", i+1)
                 session.run(optimizer, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
+
+        # save the current session so that we can continue to train/predict later
+        save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
 
 
 if __name__ == "__main__":
