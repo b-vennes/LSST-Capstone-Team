@@ -107,22 +107,22 @@ def random_image():
 
     return link
 
-def get_image_link(image_id):
+def get_image_link(fits_id):
     """
     Generates a url string for a given image id.
     Used for creating random url link to image.
     """
 
     # our bucket name
-    bucket_name = 'lsst-images'
+    bucket_name = 'lsst-actual'
 
     # get the zone for the bucket, to be added to the url
     bucket_zone = boto3.client('s3').get_bucket_location(Bucket=bucket_name)
 
-    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}.jpg".format(
+    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}.fits".format(
         bucket_zone['LocationConstraint'],
         bucket_name,
-        image_id
+        fits_id
     )
 
     return image_link
@@ -176,14 +176,14 @@ def get_image_ids():
 
     # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
-    table = dynamodb.Table('Images')
+    table = dynamodb.Table('lsst-images')
 
     all_items = (table.scan())['Items']
 
     id_list = []
 
     for item in all_items:
-        item_id = item['ID']
+        item_id = item['id']
         id_list.append(item_id)
 
     return id_list
