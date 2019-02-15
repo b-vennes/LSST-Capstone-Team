@@ -16,6 +16,8 @@ def main():
     input_placeholder = tf.placeholder(tf.float32, shape=(None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     label_placeholder = tf.placeholder(tf.float32)
 
+    # I know this line is weird, 
+    # but you have to sorta build what the graph should look like in order to get the predictor out
     graph, predictor, optimizer = ml_library.build_binary_classifier(input_placeholder, label_placeholder, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
     # use fashion set
@@ -47,6 +49,8 @@ def main():
     accuracy = ml_library.get_accuracy(test_set_prediction, test_labels)
     confusion = ml_library.get_confusion_matrix(test_set_prediction, test_labels)
 
+    # print out the predictions
+    print(test_set_prediction)
     print("accuracy", accuracy)
     print("confusion", confusion)
 

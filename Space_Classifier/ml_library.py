@@ -50,7 +50,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     graph = add_fully_connected_layer(graph, 256)
 
     # make final guess about image
-    graph = add_fully_connected_layer(graph, num_units=1)
+    graph = add_fully_connected_layer(graph, 1)
 
     # use sigmoid function to activate the neuron
     predictor = tf.nn.sigmoid(graph)

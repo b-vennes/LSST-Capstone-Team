@@ -9,8 +9,8 @@ IMAGE_HEIGHT = 28
 IMAGE_WIDTH = 28
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 1000
-NUM_OPTIMIZATIONS_PER_BATCH = 10
+BATCH_SIZE = 100
+NUM_OPTIMIZATIONS_PER_BATCH = 40
 
 def main():
 
@@ -50,6 +50,7 @@ def main():
 
     # need to restructure image data into a format that tensorflow expects (have to add an inner channel because its grayscale)
     train_images = numpy.expand_dims(train_images, axis=3)
+    test_images = numpy.expand_dims(test_images, axis=3)
 
     train_labels = numpy.reshape(train_labels, newshape=(len(train_labels), 1))
 
@@ -57,6 +58,7 @@ def main():
     input_placeholder = tf.placeholder(tf.float32, shape=(None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
     label_placeholder = tf.placeholder(tf.float32)
 
+    # get our classifier model to use for training
     graph, predictor, optimizer = ml_library.build_binary_classifier(input_placeholder, label_placeholder, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
     saver = tf.train.Saver()
