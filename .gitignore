@@ -2,4 +2,5 @@ Pipeline/lsst_stack/
 
 .vscode
 
-Space_Classifier/Images/*
+Space_Classifier/Images/*.fits
+Space_Classifier/Images/*.list
