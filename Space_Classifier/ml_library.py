@@ -3,7 +3,7 @@ from sklearn.utils import shuffle
 from skimage import io
 from skimage.transform import rescale, resize
 import tensorflow as tf
-from tensorflow import keras
+#from tensorflow import keras
 import matplotlib.image as img
 import matplotlib.pyplot as plt
 from astropy.io import fits

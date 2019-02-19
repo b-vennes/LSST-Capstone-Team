@@ -188,6 +188,38 @@ def get_image_ids():
 
     return id_list
 
+def get_non_stars():
+    """
+    Returns a list of star images
+    """
+
+     # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+    
+    images_table = dynamodb.Table('lsst-image-src')
+
+    response = images_table.scan(
+        FilterExpression = Attr('label').eq('EXT')
+    )
+    items = response['Items']
+    return items
+
+def get_stars():
+    """
+    Returns a list of star images
+    """
+
+     # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+    
+    images_table = dynamodb.Table('lsst-image-src')
+
+    response = images_table.scan(
+        FilterExpression = Attr('label').eq('STAR')
+    )
+    items = response['Items']
+    return items
+
 def show_fits():
     #Collect fits file
     plt.style.use(astropy_mpl_style)
