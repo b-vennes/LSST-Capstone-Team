@@ -18,28 +18,38 @@ def parse_images(image_id_list):
     with open(image_id_list) as f:
         lines = f.read().splitlines()
     for s_id in lines:
-        print(s_id)
         sources.append(s_id)
 
-    # Open fits files for every source and collect the headers
+    # Open fits files for every source and format stars and non-stars
+    ALL_STARS = []
+    ALL_NON_STARS = []
     for fts in sources:
         hdulist = fits.open("Images/" + fts + ".fits")
-        # Parse the WCS keywords in the primary HDU
-        w = wcs.WCS(hdulist[1].header)
-        print(w)
 
-    # Get data for stars and non-stars
-    stars = DynamoConnect.get_stars()
-    non_stars = DynamoConnect.get_non_stars()
-    print(stars[0])
+        # Get data for stars and non-stars
+        stars = DynamoConnect.get_stars(fts)
+        non_stars = DynamoConnect.get_non_stars(fts)
 
-    # TO-DO: 
-    # Each source has x and y - take that and convert to actual locations
-##    for star in stars:
-##        px = star.x - CRVAL1A
-##        py = star.y - CRVAL2A
-##        add px and py to star dictionary
+        # Each source has x and y WSC - take that and convert to pixel locations
+        for star in stars:
+            px = float(star.get('x')) - hdulist[1].header['CRVAL1A']
+            py = float(star.get('y')) - hdulist[1].header['CRVAL2A']
+            star['px'] = px
+            star['py'] = py
+            ALL_STARS.append(star)
+        for nstar in non_stars:
+            px = float(nstar.get('x')) - hdulist[1].header['CRVAL1A']
+            py = float(nstar.get('y')) - hdulist[1].header['CRVAL2A']
+            nstar['px'] = px
+            nstar['py'] = py
+            ALL_NON_STARS.append(nstar)
+            
+##    print(ALL_STARS[0])
+##    print(ALL_STARS[1])
+##    print(ALL_NON_STARS[0])
+##    print(ALL_NON_STARS[1])
 
+    # TO-DO:
     # 14 pixels on both sides
     # seperate into training and testing
 

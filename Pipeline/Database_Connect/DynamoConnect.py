@@ -188,7 +188,7 @@ def get_image_ids():
 
     return id_list
 
-def get_non_stars():
+def get_non_stars(image_id):
     """
     Returns a list of star images
     """
@@ -199,12 +199,13 @@ def get_non_stars():
     images_table = dynamodb.Table('lsst-image-src')
 
     response = images_table.scan(
-        FilterExpression = Attr('label').eq('EXT')
+        Select= 'ALL_ATTRIBUTES',
+        FilterExpression = Attr('label').eq('EXT') & Attr('image_id').eq(image_id)
     )
     items = response['Items']
     return items
 
-def get_stars():
+def get_stars(image_id):
     """
     Returns a list of star images
     """
@@ -215,7 +216,8 @@ def get_stars():
     images_table = dynamodb.Table('lsst-image-src')
 
     response = images_table.scan(
-        FilterExpression = Attr('label').eq('STAR')
+        Select= 'ALL_ATTRIBUTES',
+        FilterExpression = Attr('label').eq('STAR') & Attr('image_id').eq(image_id)
     )
     items = response['Items']
     return items
