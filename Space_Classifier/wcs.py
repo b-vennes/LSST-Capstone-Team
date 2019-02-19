@@ -9,9 +9,6 @@ import sys
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-NUMBER_LARGE_IMAGES = 0
-NUMBER_CROPPED_IMAGES = 0
-
 def parse_images(image_id_list):
     # Open file containing image ids and store them in a list
     sources = []
@@ -25,7 +22,6 @@ def parse_images(image_id_list):
     ALL_NON_STARS = []
     for fts in sources:
         hdulist = fits.open("Images/" + fts + ".fits")
-
         # Get data for stars and non-stars
         stars = DynamoConnect.get_stars(fts)
         non_stars = DynamoConnect.get_non_stars(fts)
@@ -44,13 +40,31 @@ def parse_images(image_id_list):
             nstar['py'] = py
             ALL_NON_STARS.append(nstar)
             
-##    print(ALL_STARS[0])
-##    print(ALL_STARS[1])
-##    print(ALL_NON_STARS[0])
-##    print(ALL_NON_STARS[1])
+    # Seperate 80% of true-positives and true-negatives for training
+    # Seperate other 20% for validation
+    total_images = len(ALL_STARS) + len(ALL_NON_STARS)
+    num_training = int(total_images * 0.8)
+    num_validate = total_images - num_training
+    num_star_training = int(len(ALL_STARS) * 0.8)
+    num_star_validation = len(ALL_STARS) - num_star_training
+    num_nstar_training = int(len(ALL_NON_STARS) * 0.8)
+    num_nstar_validation = len(ALL_NON_STARS) - num_nstar_training
+    
+    # Create training and validation lists
+    training_set = []
+    validation_set = []
+    for i in range(0,num_star_training):
+        training_set.append(ALL_STARS[i])
+    for i in range(0,num_nstar_training):
+        training_set.append(ALL_NON_STARS[i])
+    for i in range(0, num_star_validation):
+        validation_set.append(ALL_STARS[i])
+    for i in range(0, num_nstar_validation):
+        validation_set.append(ALL_NON_STARS[i])    
+
+    return (training_set, validation_set)
 
     # TO-DO:
     # 14 pixels on both sides
-    # seperate into training and testing
 
 parse_images("Images/image_ids.list")
