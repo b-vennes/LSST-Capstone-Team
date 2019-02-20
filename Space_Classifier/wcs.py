@@ -57,9 +57,9 @@ def parse_images(image_id_list):
         training_set.append(ALL_STARS[i])
     for i in range(0,num_nstar_training):
         training_set.append(ALL_NON_STARS[i])
-    for i in range(0, num_star_validation):
+    for i in range(num_star_training, num_star_training + num_star_validation):
         validation_set.append(ALL_STARS[i])
-    for i in range(0, num_nstar_validation):
+    for i in range(num_nstar_training, num_nstar_training + num_nstar_validation):
         validation_set.append(ALL_NON_STARS[i])    
 
     return (training_set, validation_set)
