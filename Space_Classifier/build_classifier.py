@@ -4,55 +4,22 @@ from sklearn.utils import shuffle
 import tensorflow as tf
 import numpy
 import os
+import fits_library
 
-IMAGE_HEIGHT = 28
-IMAGE_WIDTH = 28
+IMAGE_HEIGHT = 256
+IMAGE_WIDTH = 256
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 100
-NUM_OPTIMIZATIONS_PER_BATCH = 40
+BATCH_SIZE = 2000
+NUM_OPTIMIZATIONS_PER_BATCH = 1
 
 def main():
 
-    # use fashion set
-    fashion_mnist = keras.datasets.fashion_mnist
-
-    (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
-
-    train_images = train_images/255
-
-    test_images = test_images/255
-
-    trouser_not_trouser_labels = []
-
-    test_trouser_not_trouser_labels = []
-
-    for label in train_labels:
-        # if label == 5 or label == 7 or label == 9:
-        if label == 1:
-            trouser_not_trouser_labels.append(1)
-        else:
-            trouser_not_trouser_labels.append(0)
-
-    for test_label in test_labels:
-        # if test_label == 5 or test_label == 7 or test_label == 9:
-        if test_label == 1:
-            test_trouser_not_trouser_labels.append(1)
-        else:
-            test_trouser_not_trouser_labels.append(0)
-
-    train_labels = trouser_not_trouser_labels
-    test_labels = test_trouser_not_trouser_labels
+    train_images, train_labels, test_images, test_labels = fits_library.parse_images(os.path.join("Images","image_ids.list"))
 
     # shuffle the arrays consistently so that their indexes remain lined up
     train_images, train_labels = shuffle(train_images, train_labels)
     test_images, test_labels = shuffle(test_images, test_labels)
-
-    # need to restructure image data into a format that tensorflow expects (have to add an inner channel because its grayscale)
-    train_images = numpy.expand_dims(train_images, axis=3)
-    test_images = numpy.expand_dims(test_images, axis=3)
-
-    train_labels = numpy.reshape(train_labels, newshape=(len(train_labels), 1))
 
     # placeholder variable for our images array
     input_placeholder = tf.placeholder(tf.float32, shape=(None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
