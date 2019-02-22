@@ -3,7 +3,9 @@ from astropy import wcs
 from astropy.wcs import WCS
 from astropy.io import fits
 from astropy.table import Table
+from matplotlib import pyplot as plt
 import sys
+import random
 import Images
 import sys
 import math
@@ -83,6 +85,22 @@ def parse_images(image_id_list):
     for i in range(num_nstar_training, num_nstar_training + num_nstar_validation):
         validation_set.append(ALL_NON_STARS[i])
         validation_labels.append(0)
+
+    rand1 = random.randint(0,len(training_set)-1)
+    rand2 = random.randint(0,len(training_set)-1)
+    rand3 = random.randint(0,len(training_set)-1)
+    plt.figure(1)
+    plt.imshow(training_set[rand1], cmap='hot')
+    plt.colorbar()
+    plt.show()
+    plt.imshow(training_set[rand2], cmap='hot')
+    plt.colorbar()
+    plt.show()
+    plt.imshow(training_set[rand3], cmap='hot')
+    plt.colorbar()
+    plt.show()
+
+    exit()
 
     training_set = np.stack(training_set, axis=0)
     training_set = np.expand_dims(training_set, axis=3)
