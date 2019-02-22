@@ -45,22 +45,13 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # add a fourth convolutional layer with 64 filters
     graph = add_convolution_layer(graph, filters=128)
 
-    # add a fourth pooling layer
-    graph = add_pooling_layer(graph)
-
-    # add a fifth convolutional layer with 64 filters
-    graph = add_convolution_layer(graph, filters=256)
-
-    # add a fourth pooling layer
-    graph = add_pooling_layer(graph)
-
     # flatten out so that its easy to put into one neuron
     # note: each pooling layer makes the output half as big
     # note: the 64 is the number of filters from the third convolutional layer
-    graph = tf.reshape(graph, [-1, 8 * 8 * 256])
+    graph = tf.reshape(graph, [-1, 8 * 8 * 128])
 
     # add two fully connected layers with dropout in betweeen
-    graph = add_fully_connected_layer(graph, 8192)
+    graph = add_fully_connected_layer(graph, 4096)
     graph = add_dropout(graph)
     graph = add_fully_connected_layer(graph, 512)
 

@@ -6,11 +6,11 @@ import numpy
 import os
 import fits_library
 
-IMAGE_HEIGHT = 256
-IMAGE_WIDTH = 256
+IMAGE_HEIGHT = 128
+IMAGE_WIDTH = 128
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 2000
+BATCH_SIZE = 100
 NUM_OPTIMIZATIONS_PER_BATCH = 1
 
 def main():
