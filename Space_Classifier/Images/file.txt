@@ -1,0 +1,1 @@
+this file lets the Images folder be part of the github repo, but without including all the images too

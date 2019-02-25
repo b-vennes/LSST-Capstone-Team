@@ -7,6 +7,11 @@ import urllib.request
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from shutil import copyfile
+import matplotlib.pyplot as plt
+from astropy.visualization import astropy_mpl_style
+from astropy.utils.data import get_pkg_data_filename
+from astropy.io import fits
+import aplpy
 
 # predefined values for region and endpoint
 dynamodb_region = 'us-west-2'
@@ -102,22 +107,22 @@ def random_image():
 
     return link
 
-def get_image_link(image_id):
+def get_image_link(fits_id):
     """
     Generates a url string for a given image id.
     Used for creating random url link to image.
     """
 
     # our bucket name
-    bucket_name = 'lsst-images'
+    bucket_name = 'lsst-actual'
 
     # get the zone for the bucket, to be added to the url
     bucket_zone = boto3.client('s3').get_bucket_location(Bucket=bucket_name)
 
-    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}.png".format(
+    image_link = "https://s3-{0}.amazonaws.com/{1}/{2}.fits".format(
         bucket_zone['LocationConstraint'],
         bucket_name,
-        image_id
+        fits_id
     )
 
     return image_link
@@ -162,6 +167,78 @@ def get_image_info(image_id):
     except ClientError as exception:
         print(exception.response['Error']['Message'])
 
-    image_data = matches['Item']
+    return matches['Item']
 
-    return image_data
+def get_image_ids():
+    """
+    retrieves all ids in the database
+    """
+
+    # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+    table = dynamodb.Table('lsst-images')
+
+    all_items = (table.scan())['Items']
+
+    id_list = []
+
+    for item in all_items:
+        item_id = item['id']
+        id_list.append(item_id)
+
+    return id_list
+
+def get_non_stars(image_id):
+    """
+    Returns a list of star images
+    """
+
+     # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+    
+    images_table = dynamodb.Table('lsst-image-src')
+
+    response = images_table.scan(
+        Select= 'ALL_ATTRIBUTES',
+        FilterExpression = Attr('label').eq('EXT') & Attr('image_id').eq(image_id)
+    )
+    items = response['Items']
+    return items
+
+def get_stars(image_id):
+    """
+    Returns a list of star images
+    """
+
+     # access the dynamodb
+    dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
+    
+    images_table = dynamodb.Table('lsst-image-src')
+
+    response = images_table.scan(
+        Select= 'ALL_ATTRIBUTES',
+        FilterExpression = Attr('label').eq('STAR') & Attr('image_id').eq(image_id)
+    )
+    items = response['Items']
+    return items
+
+def show_fits():
+    #Collect fits file
+    plt.style.use(astropy_mpl_style)
+    image_file = get_pkg_data_filename('tutorials/FITS-images/HorseHead.fits')
+    #Create a new figure to plot fits file with
+    f = aplpy.FITSFigure(image_file)
+    #Save file
+    f.save('my_first_plot.eps')
+    
+    #Display structure of file
+    fits.info(image_file)
+
+    #Get image details
+    image_data = fits.getdata(image_file, ext=0)
+    print(image_data.shape)
+
+    # Display the image data
+    plt.figure()
+    plt.imshow(image_data, cmap='gray')
+    plt.colorbar()
