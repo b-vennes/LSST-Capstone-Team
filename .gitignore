@@ -4,3 +4,4 @@ Pipeline/lsst_stack/
 
 Space_Classifier/Images/*.fits
 Space_Classifier/Images/*.list
+LSST_Labeler_Angular
