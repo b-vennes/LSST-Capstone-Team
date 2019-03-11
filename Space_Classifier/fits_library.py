@@ -1,16 +1,20 @@
+import math
+import random
+import sys
+
 import numpy as np
 from astropy import wcs
-from astropy.wcs import WCS
 from astropy.io import fits
 from astropy.table import Table
+from astropy.wcs import WCS
 from matplotlib import pyplot as plt
-import sys
-import random
+
 import Images
-import sys
-import math
+
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
+
+IMAGE_SIZE = 64
 
 def parse_images(image_id_list):
     # Open file containing image ids and store them in a list
@@ -23,7 +27,7 @@ def parse_images(image_id_list):
     ALL_STARS = []
     ALL_NON_STARS = []
 
-    SPACING = 128
+    SPACING = int(IMAGE_SIZE/2)
 
     # Open fits files for every source and format stars and non-stars
     for fts in sources:
@@ -43,7 +47,7 @@ def parse_images(image_id_list):
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
-            if object_array.shape != (256,256):
+            if object_array.shape != (IMAGE_SIZE,IMAGE_SIZE):
                 continue
 
             ALL_STARS.append(object_array)
@@ -54,7 +58,7 @@ def parse_images(image_id_list):
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
-            if object_array.shape != (256,256):
+            if object_array.shape != (IMAGE_SIZE,IMAGE_SIZE):
                 continue
 
             ALL_NON_STARS.append(object_array)
@@ -74,33 +78,36 @@ def parse_images(image_id_list):
     validation_set = []
     validation_labels = []
     for i in range(0,num_star_training):
-        training_set.append(ALL_STARS[i])
-        training_labels.append(1)
+
+        for transformation in get_array_transformations(ALL_STARS[i]):
+            training_set.append(transformation)
+
+        for i in range(8):
+            training_labels.append(1)
+
     for i in range(0,num_nstar_training):
-        training_set.append(ALL_NON_STARS[i])
-        training_labels.append(0)
+            
+        for transformation in get_array_transformations(ALL_NON_STARS[i]):
+            training_set.append(transformation)
+
+        for i in range(8):
+            training_labels.append(1)
+
     for i in range(num_star_training, num_star_training + num_star_validation):
-        validation_set.append(ALL_STARS[i])
-        validation_labels.append(1)
+        
+        for transformation in get_array_transformations(ALL_STARS[i]):
+            validation_set.append(transformation)
+
+        for i in range(8):
+            validation_labels.append(1)
+
     for i in range(num_nstar_training, num_nstar_training + num_nstar_validation):
-        validation_set.append(ALL_NON_STARS[i])
-        validation_labels.append(0)
+        
+        for transformation in get_array_transformations(ALL_NON_STARS[i]):
+            validation_set.append(transformation)
 
-    rand1 = random.randint(0,len(training_set)-1)
-    rand2 = random.randint(0,len(training_set)-1)
-    rand3 = random.randint(0,len(training_set)-1)
-    plt.figure(1)
-    plt.imshow(training_set[rand1], cmap='hot')
-    plt.colorbar()
-    plt.show()
-    plt.imshow(training_set[rand2], cmap='hot')
-    plt.colorbar()
-    plt.show()
-    plt.imshow(training_set[rand3], cmap='hot')
-    plt.colorbar()
-    plt.show()
-
-    exit()
+        for i in range(8):
+            validation_labels.append(1)
 
     training_set = np.stack(training_set, axis=0)
     training_set = np.expand_dims(training_set, axis=3)
@@ -114,6 +121,29 @@ def parse_images(image_id_list):
     validation_labels = np.stack(validation_labels, axis=0)
     validation_labels = np.expand_dims(validation_labels, axis=1)
 
+    print("training size", len(training_set))
+    print("testing size", len(validation_set))
+
     return training_set, training_labels, validation_set, validation_labels
 
+def get_array_transformations(arr):
+    transformation = []
 
+    orig_rot90 = np.rot90(arr)
+    orig_rot180 = np.rot90(orig_rot90)
+    orig_rot270 = np.rot90(orig_rot180)
+    flip = np.flip(arr)
+    flip_rot90 = np.rot90(flip)
+    flip_rot180 = np.rot90(flip_rot90)
+    flip_rot270 = np.rot90(flip_rot180)
+
+    transformation.append(arr)
+    transformation.append(orig_rot90)
+    transformation.append(orig_rot180)
+    transformation.append(orig_rot270)
+    transformation.append(flip)
+    transformation.append(flip_rot90)
+    transformation.append(flip_rot180)
+    transformation.append(flip_rot270)
+
+    return transformation

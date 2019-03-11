@@ -1,16 +1,18 @@
-import ml_library
-from tensorflow import keras
-from sklearn.utils import shuffle
-import tensorflow as tf
-import numpy
 import os
-import fits_library
 
-IMAGE_HEIGHT = 128
-IMAGE_WIDTH = 128
+import numpy
+import tensorflow as tf
+from sklearn.utils import shuffle
+from tensorflow import keras
+
+import fits_library
+import ml_library
+
+IMAGE_HEIGHT = 64
+IMAGE_WIDTH = 64
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 100
+BATCH_SIZE = 500
 NUM_OPTIMIZATIONS_PER_BATCH = 1
 
 def main():
