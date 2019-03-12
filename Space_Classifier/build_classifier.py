@@ -8,12 +8,12 @@ from tensorflow import keras
 import fits_library
 import ml_library
 
-IMAGE_HEIGHT = 64
-IMAGE_WIDTH = 64
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 32
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 500
-NUM_OPTIMIZATIONS_PER_BATCH = 1
+BATCH_SIZE = 1000
+NUM_OPTIMIZATIONS_PER_BATCH = 10
 
 def main():
 
@@ -40,15 +40,27 @@ def main():
         image_batches = [train_images[i * BATCH_SIZE:(i + 1) * BATCH_SIZE] for i in range((len(train_images) + BATCH_SIZE - 1) // BATCH_SIZE)]
         label_batches = [train_labels[i * BATCH_SIZE:(i + 1) * BATCH_SIZE] for i in range((len(train_labels) + BATCH_SIZE - 1) // BATCH_SIZE)]
 
+        num_batches = int(len(train_images) / BATCH_SIZE)
+        print("Number of Batches:", num_batches)
+
         for i in range(len(image_batches)):
             print("batch",i+1)
+            
             # run the optimizer 10 times with the labels from this batch
             for i in range(NUM_OPTIMIZATIONS_PER_BATCH):
                 print("--- optimize", i+1)
                 session.run(optimizer, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
+            
+        test_set_prediction = session.run(predictor, feed_dict={input_placeholder:test_images})
 
         # save the current session so that we can continue to train/predict later
-        save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
+        # save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
+        
+    accuracy = ml_library.get_accuracy(test_set_prediction, test_labels)
+    confusion = ml_library.get_confusion_matrix(test_set_prediction, test_labels)
+
+    print("Accuracy", accuracy)
+    print("Confusion", confusion)
 
 
 if __name__ == "__main__":

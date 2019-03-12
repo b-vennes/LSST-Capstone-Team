@@ -14,7 +14,7 @@ import Images
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-IMAGE_SIZE = 64
+IMAGE_SIZE = 32
 
 def parse_images(image_id_list):
     # Open file containing image ids and store them in a list
@@ -91,7 +91,7 @@ def parse_images(image_id_list):
             training_set.append(transformation)
 
         for i in range(8):
-            training_labels.append(1)
+            training_labels.append(0)
 
     for i in range(num_star_training, num_star_training + num_star_validation):
         
@@ -107,7 +107,7 @@ def parse_images(image_id_list):
             validation_set.append(transformation)
 
         for i in range(8):
-            validation_labels.append(1)
+            validation_labels.append(0)
 
     training_set = np.stack(training_set, axis=0)
     training_set = np.expand_dims(training_set, axis=3)

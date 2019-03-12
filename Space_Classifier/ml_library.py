@@ -25,19 +25,19 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     graph = input_placeholder
 
     # add first convolution layer with 16 filters
-    graph = add_convolution_layer(graph, filters=16)
+    graph = add_convolution_layer(graph, filters=8)
 
     # add a pooling layer
     graph = add_pooling_layer(graph)
 
     # add second convolutional layer with 32 filters
-    graph = add_convolution_layer(graph, filters=32)
+    graph = add_convolution_layer(graph, filters=16)
 
     # add a second pooling layer
     graph = add_pooling_layer(graph)
 
     # add a third convolutional layer with 64 filters
-    graph = add_convolution_layer(graph, filters=64)
+    graph = add_convolution_layer(graph, filters=32)
 
     # add a third pooling layer
     graph = add_pooling_layer(graph)
@@ -45,7 +45,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # flatten out so that its easy to put into one neuron
     # note: each pooling layer makes the output half as big
     # note: the 64 is the number of filters from the third convolutional layer
-    graph = tf.reshape(graph, [-1, 8 * 8 * 64])
+    graph = tf.reshape(graph, [-1, 4 * 4 * 32])
 
     # add two fully connected layers with dropout in betweeen
     graph = add_fully_connected_layer(graph, 2048)
@@ -126,30 +126,30 @@ def get_accuracy(test_prediction, expected_labels):
 def get_confusion_matrix(test_prediction, expected_labels):
     # determine accuracy
     iterator = 0
-    trousers_correct = 0
-    trousers_attempts = 0
-    others_correct = 0
-    others_attempts = 0
+    stars_correct = 0
+    stars_attempts = 0
+    nonstars_correct = 0
+    nonstars_attempts = 0
     while iterator < len(test_prediction):
         if expected_labels[iterator]:
-            trousers_attempts += 1
+            stars_attempts += 1
 
             if test_prediction[iterator] > CUTOFF_VALUE:
-                trousers_correct += 1
+                stars_correct += 1
         
         else:
-            others_attempts += 1
+            nonstars_attempts += 1
 
             if test_prediction[iterator] <= CUTOFF_VALUE:
-                others_correct += 1
+                nonstars_correct += 1
         
         iterator += 1
     
-    confusion_matrix = [trousers_correct, trousers_attempts - trousers_correct], [others_correct, others_attempts - others_correct]
+    confusion_matrix = [stars_correct, stars_attempts - stars_correct], [nonstars_correct, nonstars_attempts - nonstars_correct]
 
-    subset_accuracy = trousers_correct/trousers_attempts
+    subset_accuracy = stars_correct/stars_attempts
 
-    others_accuracy = others_correct/others_attempts
+    others_accuracy = nonstars_correct/nonstars_attempts
 
     return confusion_matrix, subset_accuracy, others_accuracy
 
