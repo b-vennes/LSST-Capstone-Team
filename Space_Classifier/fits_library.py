@@ -33,17 +33,17 @@ def parse_images(image_id_list):
     for fts in sources:
         hdulist = fits.open("Images/" + fts + ".fits")
         # Get data for stars and non-stars
-        stars = DynamoConnect.get_stars(fts)
-        non_stars = DynamoConnect.get_non_stars(fts)
+        stars = DynamoConnect.get_stars(fts+".fits")
+        non_stars = DynamoConnect.get_non_stars(fts+".fits")
 
-        fits_data = hdulist[1].data
+        fits_data = hdulist[3].data
 
         print("processing", fts)
 
         # Each source has x and y WSC - take that and convert to pixel locations
         for star in stars:
-            px = int(round(float(star.get('x')) - hdulist[1].header['CRVAL1A']))
-            py = int(round(float(star.get('y')) - hdulist[1].header['CRVAL2A']))
+            px = int(round(float(star.get('x')) - hdulist[3].header['CRVAL1A']))
+            py = int(round(float(star.get('y')) - hdulist[3].header['CRVAL2A']))
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
@@ -53,8 +53,8 @@ def parse_images(image_id_list):
             ALL_STARS.append(object_array)
 
         for nstar in non_stars:
-            px = int(round(float(nstar.get('x')) - hdulist[1].header['CRVAL1A']))
-            py = int(round(float(nstar.get('y')) - hdulist[1].header['CRVAL2A']))
+            px = int(round(float(nstar.get('x')) - hdulist[3].header['CRVAL1A']))
+            py = int(round(float(nstar.get('y')) - hdulist[3].header['CRVAL2A']))
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
@@ -120,9 +120,6 @@ def parse_images(image_id_list):
 
     validation_labels = np.stack(validation_labels, axis=0)
     validation_labels = np.expand_dims(validation_labels, axis=1)
-
-    print("training size", len(training_set))
-    print("testing size", len(validation_set))
 
     return training_set, training_labels, validation_set, validation_labels
 

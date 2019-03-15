@@ -48,9 +48,9 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     graph = tf.reshape(graph, [-1, 4 * 4 * 32])
 
     # add two fully connected layers with dropout in betweeen
-    graph = add_fully_connected_layer(graph, 2048)
+    graph = add_fully_connected_layer(graph, 1024)
     graph = add_dropout(graph)
-    graph = add_fully_connected_layer(graph, 512)
+    graph = add_fully_connected_layer(graph, 256)
 
     # make final guess about image
     graph = add_fully_connected_layer(graph, 1)

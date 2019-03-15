@@ -12,8 +12,8 @@ IMAGE_HEIGHT = 32
 IMAGE_WIDTH = 32
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 1000
-NUM_OPTIMIZATIONS_PER_BATCH = 10
+BATCH_SIZE = 20
+NUM_OPTIMIZATIONS_PER_BATCH = 40
 
 def main():
 
@@ -50,17 +50,27 @@ def main():
             for i in range(NUM_OPTIMIZATIONS_PER_BATCH):
                 print("--- optimize", i+1)
                 session.run(optimizer, feed_dict={input_placeholder:image_batches[i], label_placeholder:label_batches[i]})
-            
+        
         test_set_prediction = session.run(predictor, feed_dict={input_placeholder:test_images})
 
         # save the current session so that we can continue to train/predict later
         # save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
-        
+
+    numpy.set_printoptions(threshold=numpy.inf)
+    print(test_set_prediction)
+    
+    with open('predictions.txt', 'w') as f:
+        for p in test_set_prediction:
+            f.write("%s\n" % p)
+
     accuracy = ml_library.get_accuracy(test_set_prediction, test_labels)
     confusion = ml_library.get_confusion_matrix(test_set_prediction, test_labels)
 
     print("Accuracy", accuracy)
     print("Confusion", confusion)
+
+    if confusion[1] < 0.7 and confusion[2] < 0.7:
+        print("Warning: Bad Predictor!")
 
 
 if __name__ == "__main__":

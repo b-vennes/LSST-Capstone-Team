@@ -196,7 +196,7 @@ def get_non_stars(image_id):
      # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
     
-    images_table = dynamodb.Table('lsst-image-src')
+    images_table = dynamodb.Table('lsst-top-src')
 
     response = images_table.scan(
         Select= 'ALL_ATTRIBUTES',
@@ -213,7 +213,7 @@ def get_stars(image_id):
      # access the dynamodb
     dynamodb = boto3.resource('dynamodb', region_name=dynamodb_region, endpoint_url=dynamodb_endpoint)
     
-    images_table = dynamodb.Table('lsst-image-src')
+    images_table = dynamodb.Table('lsst-top-src')
 
     response = images_table.scan(
         Select= 'ALL_ATTRIBUTES',
