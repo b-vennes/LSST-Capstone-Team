@@ -39,9 +39,6 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # add a third convolutional layer with 64 filters
     graph = add_convolution_layer(graph, filters=32)
 
-    # add a third pooling layer
-    graph = add_pooling_layer(graph)
-
     # flatten out so that its easy to put into one neuron
     # note: each pooling layer makes the output half as big
     # note: the 64 is the number of filters from the third convolutional layer
@@ -50,7 +47,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # add two fully connected layers with dropout in betweeen
     graph = add_fully_connected_layer(graph, 1024)
     graph = add_dropout(graph)
-    graph = add_fully_connected_layer(graph, 256)
+    graph = add_fully_connected_layer(graph, 128)
 
     # make final guess about image
     graph = add_fully_connected_layer(graph, 1)
@@ -64,7 +61,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
 
     return graph, predictor, optimizer
 
-def add_convolution_layer(input_graph, filters, kernel_size=9, padding = "SAME"):
+def add_convolution_layer(input_graph, filters, kernel_size=5, padding = "SAME"):
     """
     Creates a new convolution layer using the given input, filter number, kernel size, and padding type.
     """

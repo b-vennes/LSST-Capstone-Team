@@ -8,13 +8,14 @@ from astropy.io import fits
 from astropy.table import Table
 from astropy.wcs import WCS
 from matplotlib import pyplot as plt
+from sklearn.model_selection import train_test_split 
 
 import Images
 
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-IMAGE_SIZE = 32
+IMAGE_SIZE = 16
 
 def parse_images(image_id_list):
     # Open file containing image ids and store them in a list
@@ -24,8 +25,8 @@ def parse_images(image_id_list):
     for s_id in lines:
         sources.append(s_id)
 
-    ALL_STARS = []
-    ALL_NON_STARS = []
+    OBJECTS = []
+    OBJECTS_LABELS = []
 
     SPACING = int(IMAGE_SIZE/2)
 
@@ -33,8 +34,8 @@ def parse_images(image_id_list):
     for fts in sources:
         hdulist = fits.open("Images/" + fts + ".fits")
         # Get data for stars and non-stars
-        stars = DynamoConnect.get_stars(fts+".fits")
-        non_stars = DynamoConnect.get_non_stars(fts+".fits")
+        stars = DynamoConnect.get_stars(fts)
+        non_stars = DynamoConnect.get_non_stars(fts)
 
         fits_data = hdulist[3].data
 
@@ -49,8 +50,10 @@ def parse_images(image_id_list):
 
             if object_array.shape != (IMAGE_SIZE,IMAGE_SIZE):
                 continue
-
-            ALL_STARS.append(object_array)
+            
+            for transformation in get_array_transformations(object_array):
+                OBJECTS.append(transformation)
+                OBJECTS_LABELS.append(1)
 
         for nstar in non_stars:
             px = int(round(float(nstar.get('x')) - hdulist[3].header['CRVAL1A']))
@@ -61,67 +64,36 @@ def parse_images(image_id_list):
             if object_array.shape != (IMAGE_SIZE,IMAGE_SIZE):
                 continue
 
-            ALL_NON_STARS.append(object_array)
+            for transformation in get_array_transformations(object_array):
+                OBJECTS.append(transformation)
+                OBJECTS_LABELS.append(0)
 
         hdulist.close()
-            
-    # Seperate 80% of true-positives and true-negatives for training
-    # Seperate other 20% for validation
-    num_star_training = int(len(ALL_STARS) * 0.8)
-    num_star_validation = len(ALL_STARS) - num_star_training
-    num_nstar_training = int(len(ALL_NON_STARS) * 0.8)
-    num_nstar_validation = len(ALL_NON_STARS) - num_nstar_training
     
-    # Create training and validation lists
-    training_set = []
-    training_labels = []
-    validation_set = []
-    validation_labels = []
-    for i in range(0,num_star_training):
+    training_set, validation_set, training_labels, validation_labels = train_test_split(OBJECTS, OBJECTS_LABELS, test_size=0.33, shuffle=True)
 
-        for transformation in get_array_transformations(ALL_STARS[i]):
-            training_set.append(transformation)
+    training_stars = []
+    training_nstars = []
+    
+    for i in range(len(training_labels)):
+        if training_labels[i] == 1:
+            training_stars.append(training_set[i])
+        else:
+            training_nstars.append(training_set[i])
 
-        for i in range(8):
-            training_labels.append(1)
+    training_stars = np.stack(training_stars, axis=0)
+    training_stars = np.expand_dims(training_stars, axis=3)
 
-    for i in range(0,num_nstar_training):
-            
-        for transformation in get_array_transformations(ALL_NON_STARS[i]):
-            training_set.append(transformation)
-
-        for i in range(8):
-            training_labels.append(0)
-
-    for i in range(num_star_training, num_star_training + num_star_validation):
-        
-        for transformation in get_array_transformations(ALL_STARS[i]):
-            validation_set.append(transformation)
-
-        for i in range(8):
-            validation_labels.append(1)
-
-    for i in range(num_nstar_training, num_nstar_training + num_nstar_validation):
-        
-        for transformation in get_array_transformations(ALL_NON_STARS[i]):
-            validation_set.append(transformation)
-
-        for i in range(8):
-            validation_labels.append(0)
-
-    training_set = np.stack(training_set, axis=0)
-    training_set = np.expand_dims(training_set, axis=3)
+    training_nstars = np.stack(training_nstars, axis=0)
+    training_nstars = np.expand_dims(training_nstars, axis=3)
 
     validation_set = np.stack(validation_set, axis=0)
     validation_set = np.expand_dims(validation_set, axis=3)
 
-    training_labels = np.stack(training_labels, axis=0)
-    training_labels = np.expand_dims(training_labels, axis=1)
-
     validation_labels = np.stack(validation_labels, axis=0)
     validation_labels = np.expand_dims(validation_labels, axis=1)
 
-    return training_set, training_labels, validation_set, validation_labels
+    return training_stars, training_nstars, validation_set, validation_labels
 
 def get_array_transformations(arr):
     transformation = []
