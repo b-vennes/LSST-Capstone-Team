@@ -4,6 +4,7 @@ import math
 import numpy
 import tensorflow as tf
 from sklearn.utils import shuffle
+from sklearn import preprocessing
 from tensorflow import keras
 
 import fits_library
@@ -13,12 +14,13 @@ IMAGE_HEIGHT = 16
 IMAGE_WIDTH = 16
 IMAGE_CHANNELS = 1
 
-BATCH_SIZE = 50
-NUM_OPTIMIZATIONS_PER_BATCH = 50
+BATCH_SIZE = 100
+NUM_OPTIMIZATIONS_PER_BATCH = 30
 
 def main():
 
     training_stars, training_nstars, validation_set, validation_labels = fits_library.parse_images(os.path.join("Images","image_ids.list"))
+    
 
     if len(training_stars) >= len(training_nstars):
         num_items = len(training_nstars)
@@ -26,7 +28,6 @@ def main():
         num_items = len(training_stars)
 
     print("Number of Items:", num_items)
-    input()
 
     # placeholder variable for our images array
     input_placeholder = tf.placeholder(tf.float32, shape=(None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
@@ -50,7 +51,6 @@ def main():
 
         # num_batches = int(math.ceil(len(train_images) / BATCH_SIZE))
         print("Number of Batches:", num_batches)
-        input()
 
         for batch_num in range(num_batches):
 
@@ -68,16 +68,15 @@ def main():
                 if curr_star == num_items:
                     break
 
-            print(numpy.shape(curr_batch))
-
             curr_batch = numpy.stack(curr_batch)
             curr_labels = numpy.stack(curr_labels)
             
             curr_batch, curr_labels = shuffle(curr_batch, curr_labels)
             
+            print("batch", batch_num + 1)
+
             # run the optimizer 10 times with the labels from this batch
             for opt_count in range(NUM_OPTIMIZATIONS_PER_BATCH):
-                print("batch", batch_num + 1, "--- optimize", opt_count+1)
                 session.run(optimizer, feed_dict={input_placeholder:curr_batch, label_placeholder:curr_labels})
 
         test_set_prediction = session.run(predictor, feed_dict={input_placeholder:validation_set})
@@ -98,7 +97,7 @@ def main():
     print("Accuracy", accuracy)
     print("Confusion", confusion)
 
-    if confusion[1] < 0.7 or confusion[2] < 0.7:
+    if confusion[1] < 0.6 or confusion[2] < 0.6:
         print("Warning: Bad Predictor!")
 
 

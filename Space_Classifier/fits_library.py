@@ -9,6 +9,7 @@ from astropy.table import Table
 from astropy.wcs import WCS
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split 
+from sklearn import preprocessing
 
 import Images
 
@@ -30,6 +31,9 @@ def parse_images(image_id_list):
 
     SPACING = int(IMAGE_SIZE/2)
 
+    scalar = preprocessing.MinMaxScaler()
+    scalar.fit([[-100],[1600]])
+
     # Open fits files for every source and format stars and non-stars
     for fts in sources:
         hdulist = fits.open("Images/" + fts + ".fits")
@@ -37,14 +41,14 @@ def parse_images(image_id_list):
         stars = DynamoConnect.get_stars(fts)
         non_stars = DynamoConnect.get_non_stars(fts)
 
-        fits_data = hdulist[3].data
+        fits_data = hdulist[1].data
 
         print("processing", fts)
 
         # Each source has x and y WSC - take that and convert to pixel locations
         for star in stars:
-            px = int(round(float(star.get('x')) - hdulist[3].header['CRVAL1A']))
-            py = int(round(float(star.get('y')) - hdulist[3].header['CRVAL2A']))
+            px = int(round(float(star.get('x')) - hdulist[1].header['CRVAL1A']))
+            py = int(round(float(star.get('y')) - hdulist[1].header['CRVAL2A']))
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
@@ -52,12 +56,13 @@ def parse_images(image_id_list):
                 continue
             
             for transformation in get_array_transformations(object_array):
+                #transformation = scalar.transform(transformation)
                 OBJECTS.append(transformation)
                 OBJECTS_LABELS.append(1)
 
         for nstar in non_stars:
-            px = int(round(float(nstar.get('x')) - hdulist[3].header['CRVAL1A']))
-            py = int(round(float(nstar.get('y')) - hdulist[3].header['CRVAL2A']))
+            px = int(round(float(nstar.get('x')) - hdulist[1].header['CRVAL1A']))
+            py = int(round(float(nstar.get('y')) - hdulist[1].header['CRVAL2A']))
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
@@ -65,12 +70,16 @@ def parse_images(image_id_list):
                 continue
 
             for transformation in get_array_transformations(object_array):
+                #transformation = scalar.transform(transformation)
                 OBJECTS.append(transformation)
                 OBJECTS_LABELS.append(0)
 
         hdulist.close()
     
-    training_set, validation_set, training_labels, validation_labels = train_test_split(OBJECTS, OBJECTS_LABELS, test_size=0.33, shuffle=True)
+    training_set, validation_set, training_labels, validation_labels = train_test_split(OBJECTS, OBJECTS_LABELS, test_size=0.2, shuffle=True)
+
+    print(np.amax(training_set), np.amax(validation_set))
+    print(np.amin(training_set), np.amin(validation_set))
 
     training_stars = []
     training_nstars = []

@@ -25,29 +25,29 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     graph = input_placeholder
 
     # add first convolution layer with 16 filters
-    graph = add_convolution_layer(graph, filters=8)
+    graph = add_convolution_layer(graph, filters=16)
 
     # add a pooling layer
     graph = add_pooling_layer(graph)
 
     # add second convolutional layer with 32 filters
-    graph = add_convolution_layer(graph, filters=16)
+    graph = add_convolution_layer(graph, filters=32)
 
     # add a second pooling layer
     graph = add_pooling_layer(graph)
 
     # add a third convolutional layer with 64 filters
-    graph = add_convolution_layer(graph, filters=32)
+    graph = add_convolution_layer(graph, filters=64)
 
     # flatten out so that its easy to put into one neuron
     # note: each pooling layer makes the output half as big
     # note: the 64 is the number of filters from the third convolutional layer
-    graph = tf.reshape(graph, [-1, 4 * 4 * 32])
+    graph = tf.reshape(graph, [-1, 4 * 4 * 64])
 
     # add two fully connected layers with dropout in betweeen
-    graph = add_fully_connected_layer(graph, 1024)
+    graph = add_fully_connected_layer(graph, 2048)
     graph = add_dropout(graph)
-    graph = add_fully_connected_layer(graph, 128)
+    graph = add_fully_connected_layer(graph, 256)
 
     # make final guess about image
     graph = add_fully_connected_layer(graph, 1)
