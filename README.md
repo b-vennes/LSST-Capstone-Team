@@ -1,9 +1,7 @@
 # LSST_Labeler
 
-## script.py
+## Pipeline
+This folder contain scripts that should be run in the LSST pipeline environment to calibrate and upload data to AWS.
 
-This script should be copied into the root directory of the lsst pipeline. The create_image function is dumbied up so is creates a test.fits file for each source detected in an image.
-
-To do
-- get lab the source in the output .fits file
-- write a file push it delete it for each source
+# LSST Labeler Angular
+This is a link to an angular project that contains the label-er web app
