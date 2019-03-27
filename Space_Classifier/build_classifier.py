@@ -5,29 +5,28 @@ import numpy
 import tensorflow as tf
 from sklearn.utils import shuffle
 from sklearn import preprocessing
+import sklearn.metrics
 from tensorflow import keras
 
 import fits_library
 import ml_library
 
-IMAGE_HEIGHT = 16
-IMAGE_WIDTH = 16
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 32
 IMAGE_CHANNELS = 1
 
 BATCH_SIZE = 100
-NUM_OPTIMIZATIONS_PER_BATCH = 30
+NUM_OPTIMIZATIONS_PER_BATCH = 20
 
 def main():
 
-    training_stars, training_nstars, validation_set, validation_labels = fits_library.parse_images(os.path.join("Images","image_ids.list"))
+    training_stars, training_nstars, validation_set, validation_labels = fits_library.parse_images(os.path.join("Images","image_ids.list"), IMAGE_HEIGHT)
     
 
     if len(training_stars) >= len(training_nstars):
         num_items = len(training_nstars)
     else:
         num_items = len(training_stars)
-
-    print("Number of Items:", num_items)
 
     # placeholder variable for our images array
     input_placeholder = tf.placeholder(tf.float32, shape=(None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS))
@@ -84,22 +83,13 @@ def main():
         # save the current session so that we can continue to train/predict later
         # save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
 
-    numpy.set_printoptions(threshold=numpy.inf)
-    print(test_set_prediction)
-    
-    with open('predictions.txt', 'w') as f:
-        for p in test_set_prediction:
-            f.write("%s\n" % p)
-
     accuracy = ml_library.get_accuracy(test_set_prediction, validation_labels)
     confusion = ml_library.get_confusion_matrix(test_set_prediction, validation_labels)
+    f1_score_val = ml_library.get_f1_score(test_set_prediction, validation_labels)
 
     print("Accuracy", accuracy)
     print("Confusion", confusion)
-
-    if confusion[1] < 0.6 or confusion[2] < 0.6:
-        print("Warning: Bad Predictor!")
-
+    print("F1 Score", f1_score_val)
 
 if __name__ == "__main__":
     main()

@@ -16,9 +16,7 @@ import Images
 sys.path.append("..")
 from Pipeline.Database_Connect import DynamoConnect
 
-IMAGE_SIZE = 16
-
-def parse_images(image_id_list):
+def parse_images(image_id_list, image_size):
     # Open file containing image ids and store them in a list
     sources = []
     with open(image_id_list) as f:
@@ -29,7 +27,7 @@ def parse_images(image_id_list):
     OBJECTS = []
     OBJECTS_LABELS = []
 
-    SPACING = int(IMAGE_SIZE/2)
+    SPACING = int(image_size/2)
 
     scalar = preprocessing.MinMaxScaler()
     scalar.fit([[-100],[1600]])
@@ -52,7 +50,7 @@ def parse_images(image_id_list):
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
-            if object_array.shape != (IMAGE_SIZE,IMAGE_SIZE):
+            if object_array.shape != (image_size,image_size):
                 continue
             
             for transformation in get_array_transformations(object_array):
@@ -66,7 +64,7 @@ def parse_images(image_id_list):
 
             object_array = fits_data[(px-SPACING):(px+SPACING),(py-SPACING):(py+SPACING)]
 
-            if object_array.shape != (IMAGE_SIZE,IMAGE_SIZE):
+            if object_array.shape != (image_size,image_size):
                 continue
 
             for transformation in get_array_transformations(object_array):
@@ -77,9 +75,6 @@ def parse_images(image_id_list):
         hdulist.close()
     
     training_set, validation_set, training_labels, validation_labels = train_test_split(OBJECTS, OBJECTS_LABELS, test_size=0.2, shuffle=True)
-
-    print(np.amax(training_set), np.amax(validation_set))
-    print(np.amin(training_set), np.amin(validation_set))
 
     training_stars = []
     training_nstars = []

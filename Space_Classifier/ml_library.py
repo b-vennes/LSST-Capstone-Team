@@ -2,6 +2,7 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.utils import shuffle
 from skimage import io
 from skimage.transform import rescale, resize
+import sklearn.metrics
 import tensorflow as tf
 #from tensorflow import keras
 import matplotlib.image as img
@@ -16,7 +17,7 @@ from Pipeline.Database_Connect import DynamoConnect
 
 CUTOFF_VALUE = 0.5
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 
 def build_binary_classifier(input_placeholder, label_placeholder, image_height, image_width, image_channels):
     # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
@@ -39,6 +40,9 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # add a third convolutional layer with 64 filters
     graph = add_convolution_layer(graph, filters=64)
 
+    # add a third pooling layer
+    graph = add_pooling_layer(graph)
+
     # flatten out so that its easy to put into one neuron
     # note: each pooling layer makes the output half as big
     # note: the 64 is the number of filters from the third convolutional layer
@@ -56,7 +60,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     predictor = tf.nn.sigmoid(graph)
 
     # create optimizer using the losses
-    losses = tf.losses.mean_squared_error(predictor,label_placeholder)
+    losses = tf.losses.mean_squared_error(label_placeholder, predictor)
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(losses)
 
     return graph, predictor, optimizer
@@ -102,17 +106,26 @@ def add_dropout(input_graph, dropout_rate=0.5):
 
     return dropout
 
+def get_f1_score(test_prediction, expected_labels):
+    test_prediction_rounded = numpy.round(test_prediction)
+
+    f1_score_value = sklearn.metrics.f1_score(expected_labels, test_prediction_rounded)
+
+    return f1_score_value
 
 def get_accuracy(test_prediction, expected_labels):
     correct_num = 0
     
     iterator = 0
-    while iterator < len(test_prediction):
+
+    test_prediction_rounded = numpy.round(test_prediction)
+
+    while iterator < len(test_prediction_rounded):
         if expected_labels[iterator]:
-            if test_prediction[iterator] > CUTOFF_VALUE:
+            if test_prediction_rounded[iterator] > CUTOFF_VALUE:
                 correct_num += 1
         else:
-            if test_prediction[iterator] <= CUTOFF_VALUE:
+            if test_prediction_rounded[iterator] <= CUTOFF_VALUE:
                 correct_num += 1
         
         iterator += 1
@@ -127,17 +140,20 @@ def get_confusion_matrix(test_prediction, expected_labels):
     stars_attempts = 0
     nonstars_correct = 0
     nonstars_attempts = 0
-    while iterator < len(test_prediction):
+
+    test_prediction_rounded = numpy.round(test_prediction)
+
+    while iterator < len(test_prediction_rounded):
         if expected_labels[iterator]:
             stars_attempts += 1
 
-            if test_prediction[iterator] > CUTOFF_VALUE:
+            if test_prediction_rounded[iterator] > CUTOFF_VALUE:
                 stars_correct += 1
         
         else:
             nonstars_attempts += 1
 
-            if test_prediction[iterator] <= CUTOFF_VALUE:
+            if test_prediction_rounded[iterator] <= CUTOFF_VALUE:
                 nonstars_correct += 1
         
         iterator += 1
