@@ -59,6 +59,8 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # use sigmoid function to activate the neuron
     predictor = tf.nn.sigmoid(graph)
 
+    # rounding
+
     # create optimizer using the losses
     losses = tf.losses.mean_squared_error(label_placeholder, predictor)
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(losses)

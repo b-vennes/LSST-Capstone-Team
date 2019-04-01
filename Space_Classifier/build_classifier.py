@@ -1,5 +1,6 @@
 import os
 import math
+import sys
 
 import numpy
 import tensorflow as tf
@@ -7,21 +8,26 @@ from sklearn.utils import shuffle
 from sklearn import preprocessing
 import sklearn.metrics
 from tensorflow import keras
+import matplotlib.pyplot as plt
 
 import fits_library
 import ml_library
 
+IMAGE_CHANNELS = 1
 IMAGE_HEIGHT = 32
 IMAGE_WIDTH = 32
-IMAGE_CHANNELS = 1
-
-BATCH_SIZE = 100
-NUM_OPTIMIZATIONS_PER_BATCH = 20
 
 def main():
+    
+    BATCH_SIZE = int(sys.argv[1])
+    NUM_OPTIMIZATIONS_PER_BATCH = int(sys.argv[2])
 
     training_stars, training_nstars, validation_set, validation_labels = fits_library.parse_images(os.path.join("Images","image_ids.list"), IMAGE_HEIGHT)
-    
+
+    simple_validation_set = validation_set[:200]
+    simple_label_set = validation_labels[:200]
+
+    print(len(simple_validation_set))
 
     if len(training_stars) >= len(training_nstars):
         num_items = len(training_nstars)
@@ -51,6 +57,31 @@ def main():
         # num_batches = int(math.ceil(len(train_images) / BATCH_SIZE))
         print("Number of Batches:", num_batches)
 
+        count = 1
+        f1_scores_x = []
+        f1_scores_y = []
+
+        stars_x = []
+        stars_y = []
+
+        others_x = []
+        others_y = []
+
+        plt.figure(figsize=(8,6))
+        plt.axis([1, num_batches * NUM_OPTIMIZATIONS_PER_BATCH, 0, 1])
+        plt.xlabel("Optimization Number")
+        plt.ylabel("F1 Score")
+        plt.title("Validity of Predictor")
+
+        plt.plot(f1_scores_x, f1_scores_y, "m", label="F1 Score")
+        plt.plot(stars_x, stars_y, "c", label="Stars Accuracy")
+        plt.plot(others_x, others_y, "r", label="Extension Accuracy")
+
+        plt.legend()
+
+        plt.ion()
+        plt.show()
+
         for batch_num in range(num_batches):
 
             curr_batch = []
@@ -78,10 +109,32 @@ def main():
             for opt_count in range(NUM_OPTIMIZATIONS_PER_BATCH):
                 session.run(optimizer, feed_dict={input_placeholder:curr_batch, label_placeholder:curr_labels})
 
+                curr_simple_prediction = session.run(predictor, feed_dict={input_placeholder:simple_validation_set})
+                curr_f1_score = ml_library.get_f1_score(curr_simple_prediction, simple_label_set)
+                curr_confusion = ml_library.get_confusion_matrix(curr_simple_prediction, simple_label_set)
+                
+                f1_scores_x.append(count)
+                f1_scores_y.append(curr_f1_score)
+
+                stars_x.append(count)
+                stars_y.append(curr_confusion[1])
+
+                others_x.append(count)
+                others_y.append(curr_confusion[2])
+
+                plt.plot(f1_scores_x, f1_scores_y, "m", label="F1 Score")
+                plt.plot(stars_x, stars_y, "c", label="Stars Accuracy")
+                plt.plot(others_x, others_y, "r", label="Extension Accuracy")
+
+                plt.draw()
+                plt.pause(0.0001)
+                count += 1
+                
+
         test_set_prediction = session.run(predictor, feed_dict={input_placeholder:validation_set})
 
         # save the current session so that we can continue to train/predict later
-        # save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
+        save_path = saver.save(session, os.path.join(os.path.dirname(__file__), 'cnn_save_state', 'cnn_model.ckpt'))
 
     accuracy = ml_library.get_accuracy(test_set_prediction, validation_labels)
     confusion = ml_library.get_confusion_matrix(test_set_prediction, validation_labels)
@@ -90,6 +143,9 @@ def main():
     print("Accuracy", accuracy)
     print("Confusion", confusion)
     print("F1 Score", f1_score_val)
+
+    plt.ioff()
+    plt.show()
 
 if __name__ == "__main__":
     main()
