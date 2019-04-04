@@ -29,9 +29,6 @@ def parse_images(image_id_list, image_size):
 
     SPACING = int(image_size/2)
 
-    scalar = preprocessing.MinMaxScaler()
-    scalar.fit([[-100],[1600]])
-
     # Open fits files for every source and format stars and non-stars
     for fts in sources:
         hdulist = fits.open("Images/" + fts + ".fits")
@@ -54,7 +51,6 @@ def parse_images(image_id_list, image_size):
                 continue
             
             for transformation in get_array_transformations(object_array):
-                #transformation = scalar.transform(transformation)
                 OBJECTS.append(transformation)
                 OBJECTS_LABELS.append(1)
 
@@ -68,7 +64,6 @@ def parse_images(image_id_list, image_size):
                 continue
 
             for transformation in get_array_transformations(object_array):
-                #transformation = scalar.transform(transformation)
                 OBJECTS.append(transformation)
                 OBJECTS_LABELS.append(0)
 

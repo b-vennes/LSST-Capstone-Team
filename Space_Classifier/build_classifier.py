@@ -18,16 +18,8 @@ IMAGE_HEIGHT = 32
 IMAGE_WIDTH = 32
 
 def main():
-    
-    BATCH_SIZE = int(sys.argv[1])
-    NUM_OPTIMIZATIONS_PER_BATCH = int(sys.argv[2])
 
     training_stars, training_nstars, validation_set, validation_labels = fits_library.parse_images(os.path.join("Images","image_ids.list"), IMAGE_HEIGHT)
-
-    simple_validation_set = validation_set[:200]
-    simple_label_set = validation_labels[:200]
-
-    print(len(simple_validation_set))
 
     if len(training_stars) >= len(training_nstars):
         num_items = len(training_nstars)
@@ -43,92 +35,65 @@ def main():
 
     saver = tf.train.Saver()
 
-    curr_star = 0
-    curr_nstar = 0
-
     # run it!
     with tf.Session() as session:
-        
+
+        merged = tf.summary.merge_all()
+
+        this_directory = os.path.dirname(__file__)
+
+        tf_output = os.path.join(this_directory, 'tf_logs')
+
+        train_writer = tf.summary.FileWriter(tf_output, session.graph)
+
         # initialize the environment
         tf.global_variables_initializer().run()
 
-        num_batches = int(math.ceil((2 * num_items) / BATCH_SIZE))
+        batch_size = 2000
 
-        # num_batches = int(math.ceil(len(train_images) / BATCH_SIZE))
-        print("Number of Batches:", num_batches)
+        num_mini_batches = int(math.ceil((2 * num_items) / batch_size))
 
-        count = 1
-        f1_scores_x = []
-        f1_scores_y = []
+        counter = 0
 
-        stars_x = []
-        stars_y = []
+        # run through batches 100 times
+        for iterator in range(100):
 
-        others_x = []
-        others_y = []
+            print("Iterator", iterator)
 
-        plt.figure(figsize=(8,6))
-        plt.axis([1, num_batches * NUM_OPTIMIZATIONS_PER_BATCH, 0, 1])
-        plt.xlabel("Optimization Number")
-        plt.ylabel("F1 Score")
-        plt.title("Validity of Predictor")
+            curr_star = 0
+            curr_nstar = 0
 
-        plt.plot(f1_scores_x, f1_scores_y, "m", label="F1 Score")
-        plt.plot(stars_x, stars_y, "c", label="Stars Accuracy")
-        plt.plot(others_x, others_y, "r", label="Extension Accuracy")
+            training_stars = shuffle(training_stars)
+            training_nstars = shuffle(training_nstars)
 
-        plt.legend()
+            for batch_num in range(num_mini_batches):
 
-        plt.ion()
-        plt.show()
+                print("Mini Batch", batch_num)
 
-        for batch_num in range(num_batches):
+                curr_batch = []
+                curr_labels = []
 
-            curr_batch = []
-            curr_labels = []
+                for item_count in range(int(batch_size/2)):
+                    curr_batch.append(training_stars[curr_star])
+                    curr_labels.append(1)
+                    curr_star += 1
+                    curr_batch.append(training_nstars[curr_nstar])
+                    curr_labels.append(0)
+                    curr_nstar += 1
 
-            for item_count in range(int(BATCH_SIZE/2)):
-                curr_batch.append(training_stars[curr_star])
-                curr_labels.append(1)
-                curr_star += 1
-                curr_batch.append(training_nstars[curr_nstar])
-                curr_labels.append(0)
-                curr_nstar += 1
+                    if curr_star == num_items:
+                        break
 
-                if curr_star == num_items:
-                    break
-
-            curr_batch = numpy.stack(curr_batch)
-            curr_labels = numpy.stack(curr_labels)
-            
-            curr_batch, curr_labels = shuffle(curr_batch, curr_labels)
-            
-            print("batch", batch_num + 1)
-
-            # run the optimizer 10 times with the labels from this batch
-            for opt_count in range(NUM_OPTIMIZATIONS_PER_BATCH):
-                session.run(optimizer, feed_dict={input_placeholder:curr_batch, label_placeholder:curr_labels})
-
-                curr_simple_prediction = session.run(predictor, feed_dict={input_placeholder:simple_validation_set})
-                curr_f1_score = ml_library.get_f1_score(curr_simple_prediction, simple_label_set)
-                curr_confusion = ml_library.get_confusion_matrix(curr_simple_prediction, simple_label_set)
+                curr_batch = numpy.stack(curr_batch)
+                curr_labels = numpy.stack(curr_labels)
                 
-                f1_scores_x.append(count)
-                f1_scores_y.append(curr_f1_score)
+                curr_batch, curr_labels = shuffle(curr_batch, curr_labels)
 
-                stars_x.append(count)
-                stars_y.append(curr_confusion[1])
+                summary, _ = session.run([merged, optimizer], feed_dict={input_placeholder:curr_batch, label_placeholder:curr_labels})
 
-                others_x.append(count)
-                others_y.append(curr_confusion[2])
+                train_writer.add_summary(summary, counter)
 
-                plt.plot(f1_scores_x, f1_scores_y, "m", label="F1 Score")
-                plt.plot(stars_x, stars_y, "c", label="Stars Accuracy")
-                plt.plot(others_x, others_y, "r", label="Extension Accuracy")
-
-                plt.draw()
-                plt.pause(0.0001)
-                count += 1
+                counter += 1
                 
 
         test_set_prediction = session.run(predictor, feed_dict={input_placeholder:validation_set})
@@ -143,9 +108,6 @@ def main():
     print("Accuracy", accuracy)
     print("Confusion", confusion)
     print("F1 Score", f1_score_val)
-
-    plt.ioff()
-    plt.show()
 
 if __name__ == "__main__":
     main()

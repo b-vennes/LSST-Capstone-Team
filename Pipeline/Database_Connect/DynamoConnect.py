@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from astropy.visualization import astropy_mpl_style
 from astropy.utils.data import get_pkg_data_filename
 from astropy.io import fits
-import aplpy
+#import aplpy
 
 # predefined values for region and endpoint
 dynamodb_region = 'us-west-2'

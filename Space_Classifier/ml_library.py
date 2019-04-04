@@ -25,6 +25,9 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # start our graph with the input placeholder
     graph = input_placeholder
 
+    # scale all values to be between 0 and 1
+    graph = tf.div(tf.subtract(graph, tf.reduce_min(graph)), tf.subtract(tf.reduce_max(graph), tf.reduce_min(graph)))
+
     # add first convolution layer with 16 filters
     graph = add_convolution_layer(graph, filters=16)
 
@@ -49,9 +52,9 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     graph = tf.reshape(graph, [-1, 4 * 4 * 64])
 
     # add two fully connected layers with dropout in betweeen
-    graph = add_fully_connected_layer(graph, 2048)
-    graph = add_dropout(graph)
-    graph = add_fully_connected_layer(graph, 256)
+    #graph = add_fully_connected_layer(graph, 2048)
+    #graph = add_dropout(graph)
+    #graph = add_fully_connected_layer(graph, 256)
 
     # make final guess about image
     graph = add_fully_connected_layer(graph, 1)
@@ -59,10 +62,11 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     # use sigmoid function to activate the neuron
     predictor = tf.nn.sigmoid(graph)
 
-    # rounding
-
     # create optimizer using the losses
     losses = tf.losses.mean_squared_error(label_placeholder, predictor)
+
+    tf.summary.scalar("losses", losses)
+
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(losses)
 
     return graph, predictor, optimizer
