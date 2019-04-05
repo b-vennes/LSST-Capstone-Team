@@ -9,6 +9,7 @@ from sklearn import preprocessing
 import sklearn.metrics
 from tensorflow import keras
 import matplotlib.pyplot as plt
+import datetime
 
 import fits_library
 import ml_library
@@ -38,25 +39,32 @@ def main():
     # run it!
     with tf.Session() as session:
 
-        merged = tf.summary.merge_all()
-
         this_directory = os.path.dirname(__file__)
 
-        tf_output = os.path.join(this_directory, 'tf_logs')
+        currentDT = datetime.datetime.now()
+
+        currentDT.combine
+
+        foldername = f'logs_{currentDT.year}{currentDT.day}{currentDT.hour}{currentDT.minute}'
+
+        tf_output = os.path.join(this_directory, 'tf_logs', foldername)
 
         train_writer = tf.summary.FileWriter(tf_output, session.graph)
 
+        merged = tf.summary.merge_all()
+
         # initialize the environment
         tf.global_variables_initializer().run()
+        tf.local_variables_initializer().run()
 
-        batch_size = 2000
+        batch_size = 3000
 
         num_mini_batches = int(math.ceil((2 * num_items) / batch_size))
 
         counter = 0
 
         # run through batches 100 times
-        for iterator in range(100):
+        for iterator in range(500):
 
             print("Iterator", iterator)
 
@@ -85,6 +93,9 @@ def main():
                         break
 
                 curr_batch = numpy.stack(curr_batch)
+
+                # normalize batch between 0 and 1
+                curr_batch = (curr_batch - numpy.min(curr_batch))/numpy.ptp(curr_batch)
                 curr_labels = numpy.stack(curr_labels)
                 
                 curr_batch, curr_labels = shuffle(curr_batch, curr_labels)

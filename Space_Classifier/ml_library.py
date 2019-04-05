@@ -17,8 +17,6 @@ from Pipeline.Database_Connect import DynamoConnect
 
 CUTOFF_VALUE = 0.5
 
-LEARNING_RATE = 0.01
-
 def build_binary_classifier(input_placeholder, label_placeholder, image_height, image_width, image_channels):
     # This site offers some loose guidance: https://www.tensorflow.org/tutorials/estimators/cnn
 
@@ -26,7 +24,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
     graph = input_placeholder
 
     # scale all values to be between 0 and 1
-    graph = tf.div(tf.subtract(graph, tf.reduce_min(graph)), tf.subtract(tf.reduce_max(graph), tf.reduce_min(graph)))
+    # graph = tf.div(tf.subtract(graph, tf.reduce_min(graph)), tf.subtract(tf.reduce_max(graph), tf.reduce_min(graph)))
 
     # add first convolution layer with 16 filters
     graph = add_convolution_layer(graph, filters=16)
@@ -67,7 +65,7 @@ def build_binary_classifier(input_placeholder, label_placeholder, image_height, 
 
     tf.summary.scalar("losses", losses)
 
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE).minimize(losses)
+    optimizer = tf.train.AdamOptimizer().minimize(losses)
 
     return graph, predictor, optimizer
 
